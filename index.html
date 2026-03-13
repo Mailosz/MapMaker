@@ -88,6 +88,10 @@
             position: fixed;
             top: 0;
             left: 0;
+            display: none;
+        }
+
+        .edit-mode .maplibregl-marker {
             display: block;
         }
 
@@ -106,9 +110,24 @@
             border: 2px solid #555;
             border-radius: 50%;
         }
+
+        #territory-list {
+            overflow-y: auto;
+            margin-bottom: 4px;
+        }
+
+        #territory-list>div {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 4px;
+        }
+
+        #territory-list>div.selected {
+            background-color: cornflowerblue;
+        }
     </style>
 </head>
-<body>
+<body class="edit-mode">
     <div id="map-container"></div>
     <div class="overlay" style="position: fixed; top: 10px; left: 10px;" onclick="addPointButtonClick()">
         <label>Tryb edycji: <input type="checkbox" id="edit-mode-toggle" onchange="toggleEditMode(this.checked)" checked></label>
@@ -180,6 +199,18 @@
 
     });
 
+    map.on('click', (e) => {
+        const features = map.queryRenderedFeatures(e.point);
+
+        if (features.length > 0 && features[0].source.startsWith('territory-source-')) {
+            const territoryId = features[0].source.substring('territory-source-'.length);
+            const territoryData = territories.find(t => t.id === territoryId);
+            selectTerritoryForEditing(territoryData);
+        } else {
+            selectTerritoryForEditing(null);
+        }
+    });
+
 
     let data = {
         v: 1,
@@ -229,7 +260,7 @@
             ]
         };
 
-        map.addSource(`territory-${id}`, {
+        map.addSource(`territory-source-${id}`, {
             'type': 'geojson',
             'data': geojson
         });
@@ -237,7 +268,7 @@
         map.addLayer({
             'id': `${id}-fill-layer`,
             'type': 'fill',
-            'source': `territory-${id}`,
+            'source': `territory-source-${id}`,
             'layout': {},
             'paint': {
                 'fill-color': territoryData.fill,
@@ -248,7 +279,7 @@
         map.addLayer({
             'id': `${id}-stroke-layer`,
             'type': 'line',
-            'source': `territory-${id}`,
+            'source': `territory-source-${id}`,
             'layout': {},
             'paint': {
                 'line-color': territoryData.stroke,
@@ -256,7 +287,16 @@
             }
         }); 
 
-        territories.push({
+
+        let listElement = document.createElement('div');
+        listElement.textContent = `${territoryData.number} - ${territoryData.name}`;
+        listElement.onclick = () => {
+            selectTerritoryForEditing(territories.find(t => t.id === id));
+        };
+        document.getElementById('territory-list').appendChild(listElement);
+
+
+        let newTerritory = {
             id: id, 
             number: territoryData.number, 
             name: territoryData.name, 
@@ -265,9 +305,13 @@
             fill: territoryData.fill, 
             stroke: territoryData.stroke, 
             thickness: territoryData.thickness, 
-            opacity: territoryData.opacity
-        });
+            opacity: territoryData.opacity,
+            listElement: listElement
+        };
 
+        territories.push(newTerritory);
+
+        return newTerritory;
     }
 
     function removeEditingMarkers() {
@@ -281,11 +325,19 @@
     function selectTerritoryForEditing(territoryData) {
         removeEditingMarkers();
 
+        if (editedTerritory) {
+            editedTerritory.listElement.classList.remove('selected');
+        }
+
         editedTerritory = territoryData;
         
+        if (!territoryData) return;
+
         territoryData.coords.forEach((point, index) => {
             createNode(point, index, territoryData.geojson, territoryNodes);
         });
+
+        territoryData.listElement.classList.add('selected');
     }
 
 
@@ -385,7 +437,7 @@
         }
         territoryNodes.splice(newnode.index, 0, newnode);
         geojson.features[0].geometry.coordinates[0].splice(newnode.index, 0, point);
-        map.getSource(`territory-${editedTerritory.id}`).setData(geojson);
+        map.getSource(`territory-source-${editedTerritory.id}`).setData(geojson);
     }
 
     function nodeDragEnd() {
@@ -410,7 +462,7 @@
             territoryNodes[i].index--;
         }
 
-        map.getSource(`territory-${editedTerritory.id}`).setData(geojson);
+        map.getSource(`territory-source-${editedTerritory.id}`).setData(geojson);
 
         // set halfpoint of next node
         territoryNodes[node.index % territoryNodes.length].halfpoint.setLngLat(getHalfpointPosition(geojson.features[0].geometry.coordinates[0][node.index === 0 ? geojson.features[0].geometry.coordinates[0].length - 1 : node.index - 1], geojson.features[0].geometry.coordinates[0][node.index]));
@@ -432,7 +484,7 @@
         let nextPoint = node.index === territoryNodes.length - 1 ? geojson.features[0].geometry.coordinates[0][0] : geojson.features[0].geometry.coordinates[0][node.index + 1];
         territoryNodes[(node.index + 1) % territoryNodes.length].halfpoint.setLngLat(getHalfpointPosition(nextPoint, [lngLat.lng, lngLat.lat]));
 
-        map.getSource(`territory-${editedTerritory.id}`).setData(geojson);
+        map.getSource(`territory-source-${editedTerritory.id}`).setData(geojson);
     }
 
 
@@ -472,7 +524,7 @@
 
     function toggleEditMode(enabled) {
         // Implement edit mode toggle logic here
-        
+        document.body.classList.toggle('edit-mode');
     }
 
     function addNewTerritory() {
