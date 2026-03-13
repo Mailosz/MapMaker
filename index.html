@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa</title>
+    <style>
+        html {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: stretch;
+            align-items: stretch;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: stretch;
+            align-items: stretch;
+            flex: 1;
+        }
+
+        #map-container {
+            flex: 1;
+            height: 100vh;
+            position: relative;
+        }
+
+        .maplibregl-canvas-container {
+            overflow: clip;
+            height: 100vh;
+        }
+
+        .maplibregl-control-container {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            bottom:auto
+        }
+
+        .maplibregl-ctrl-bottom-right {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+        }
+
+        .maplibregl-ctrl-top-right {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+        }
+
+        .maplibregl-ctrl-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .maplibregl-ctrl-zoom-in::before {
+            content: '+';
+            font-size: large;
+        }
+
+        .maplibregl-ctrl-zoom-out::before {
+            content: '-';
+            font-size: large;
+        }
+
+        .maplibregl-ctrl-compass::before {
+            content: '⥈';
+            font-size: large;
+            cursor: all-scroll;
+        }
+
+        .overlay, .maplibregl-ctrl {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+            padding: 4px;
+            border: 1px solid #888;
+            border-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .maplibregl-marker {
+            cursor: all-scroll;
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: block;
+        }
+
+        .maplibregl-marker.point-marker {
+            width: 16px;
+            height: 16px;
+            background-color: cornflowerblue;
+            border: 2px solid #555;
+            border-radius: 50%;
+        }
+
+        .maplibregl-marker.halfpoint-marker {
+            width: 12px;
+            height: 12px;
+            background-color: #99bbff;
+            border: 2px solid #555;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div id="map-container"></div>
+    <div class="overlay" style="position: fixed; top: 10px; left: 10px;" onclick="addPointButtonClick()">
+        <label>Tryb edycji: <input type="checkbox" id="edit-mode-toggle" onchange="toggleEditMode(this.checked)" checked></label>
+        <details>
+            <summary>Wygląd:</summary>
+            <p><label>Wypełnienie: <input type="color" onchange="changeFillColor(this.value)"></label></p>
+            <p><label>Obramowanie: <input type="color" onchange="changeStrokeColor(this.value)"></label></p>
+            <p><label>Grubość kreski: <input type="range" min="1" step="0.1" max="10" onchange="changeStrokeWidth(this.value)"></label></p>
+            <p><label>Przezroczystość: <input type="range" min="0" step="0.01" max="1" onchange="changeOpacity(this.value)"></label></p>
+        </details>
+    </div>
+    <div class="overlay" style="position: fixed; left: 10px; bottom: 10px;">
+        <details>
+            <summary>Lista terenów: <button onclick="save()">Zapisz</button><button onclick="load()">Otwórz</button></summary>
+            <div>
+                <div id="territory-list">
+    
+                </div>
+                <button onclick="addNewTerritory()">Dodaj teren</button>
+            </div>
+        </details>
+    </div>
+    <script src='https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js'></script>
+    <script>
+
+        let territoryNodes = [];
+        let editedTerritory = null;
+        let territories = [];
+    
+    // Initialize the map       
+    let map = new maplibregl.Map({
+        container: 'map-container',
+        style: {
+            version: 8,
+            sources: {
+                osm: {
+                    type: 'raster',
+                    tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                    tileSize: 256,
+                    attribution: '&copy; OpenStreetMap Contributors',
+                    maxzoom: 19
+                },
+            },
+            layers: [
+                {
+                    id: 'osm',
+                    type: 'raster',
+                    source: 'osm'
+                },
+            ]
+        },
+        center: [22, 50], // starting position [lng, lat]
+        zoom: 9 // starting zoom
+    });
+    const canvas = map.getCanvasContainer();
+
+    map.addControl(new maplibregl.NavigationControl({
+        visualizePitch: true,
+        visualizeRoll: true,
+        showZoom: true,
+        showCompass: true
+    }));
+
+    map.on('load', () => {
+        // Add a source and layer displaying a point which will be dragged around.
+
+        loadData(data);
+        selectTerritoryForEditing(territories[0]);
+
+    });
+
+
+    let data = {
+        v: 1,
+        territories: [
+            {
+                number: 1,
+                name: "Teren 1",
+                coords: [[22, 50], [22.2, 50], [22.1, 50.2]],
+                fill: "#008",
+                stroke: "#000000",
+                thickness: 5,
+                opacity: 0.2
+            },
+            {
+                number: 2,
+                name: "Teren 2",
+                coords: [[23, 50], [23.2, 50], [23.1, 50.2]],
+                fill: "#080",
+                stroke: "#000000",
+                thickness: 5,
+                opacity: 0.2
+
+            }
+        ]
+    }
+
+    function loadData(data) {
+        data.territories.forEach(territory => {
+            openTerritory(territory);
+        });
+    }
+
+    function openTerritory(territoryData) {
+
+        const id = crypto.randomUUID();
+
+        const geojson = {
+            'type': 'FeatureCollection',
+            'features': [
+                {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Polygon',
+                        'coordinates': [[...territoryData.coords, territoryData.coords[0]]]
+                    }
+                }
+            ]
+        };
+
+        map.addSource(`territory-${id}`, {
+            'type': 'geojson',
+            'data': geojson
+        });
+
+        map.addLayer({
+            'id': `${id}-fill-layer`,
+            'type': 'fill',
+            'source': `territory-${id}`,
+            'layout': {},
+            'paint': {
+                'fill-color': territoryData.fill,
+                'fill-opacity': territoryData.opacity,
+            }
+        });
+
+        map.addLayer({
+            'id': `${id}-stroke-layer`,
+            'type': 'line',
+            'source': `territory-${id}`,
+            'layout': {},
+            'paint': {
+                'line-color': territoryData.stroke,
+                'line-width': territoryData.thickness,
+            }
+        }); 
+
+        territories.push({
+            id: id, 
+            number: territoryData.number, 
+            name: territoryData.name, 
+            coords: territoryData.coords, 
+            geojson: geojson, 
+            fill: territoryData.fill, 
+            stroke: territoryData.stroke, 
+            thickness: territoryData.thickness, 
+            opacity: territoryData.opacity
+        });
+
+    }
+
+    function removeEditingMarkers() {
+        territoryNodes.forEach(node => {
+            node.marker.remove();
+            node.halfpoint.remove();
+        });
+        territoryNodes = [];
+    }
+
+    function selectTerritoryForEditing(territoryData) {
+        removeEditingMarkers();
+
+        editedTerritory = territoryData;
+        
+        territoryData.coords.forEach((point, index) => {
+            createNode(point, index, territoryData.geojson, territoryNodes);
+        });
+    }
+
+
+    function createNode(point, index, geojson, territoryNodes) {
+
+    
+            let marker = new maplibregl.Marker({
+                    draggable: true,
+                    element: document.createElement('div'),
+                    className: 'point-marker'
+            })
+                .setLngLat(point)
+                .addTo(map);
+            
+            let halfpoint = new maplibregl.Marker({
+                    draggable: true,
+                    element: document.createElement('div'),
+                    className: 'halfpoint-marker'
+            })
+                .setLngLat(getHalfpointPosition(geojson.features[0].geometry.coordinates[0][index === 0 ? geojson.features[0].geometry.coordinates[0].length - 2 : index - 1], point))
+                .addTo(map);
+
+            let node = {marker: marker, halfpoint: halfpoint, index: index};
+            territoryNodes.push(node);
+
+            marker.on('drag', () => {
+                nodeDrag(node, geojson, territoryNodes);
+            });
+
+            marker.getElement().addEventListener('dblclick', (event) => {
+                event.stopPropagation();
+                nodeDblClick(node, geojson, territoryNodes);
+            });
+
+            marker.on('dragend', () => {
+                nodeDragEnd();    
+            });
+            
+            node.halfpointDragstartSubscription = halfpoint.on('dragstart', () => {
+                addNode(node, geojson, territoryNodes);
+            });
+    }
+
+    function getHalfpointPosition(p1, p2) {return [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]}
+
+    function addNode(node, geojson, territoryNodes) {
+
+        node.halfpointDragstartSubscription.unsubscribe();
+
+        let previousPoint = geojson.features[0].geometry.coordinates[0][node.index === 0 ? geojson.features[0].geometry.coordinates[0].length - 1 : node.index - 1];
+        let nextPoint = geojson.features[0].geometry.coordinates[0][node.index];
+        let point = getHalfpointPosition(previousPoint, nextPoint);
+
+
+        let halfpoint = new maplibregl.Marker({
+                draggable: true,
+                element: document.createElement('div'),
+                className: 'halfpoint-marker'
+        })
+            .setLngLat(getHalfpointPosition(previousPoint, point))
+            .addTo(map);
+        
+        let newnode = {marker:node.halfpoint, halfpoint: halfpoint, index: node.index};
+        newnode.marker.addClassName('point-marker');
+        newnode.marker.removeClassName('halfpoint-marker');
+
+        newnode.marker.on('drag', () => {
+            nodeDrag(newnode, geojson, territoryNodes);
+        });
+
+        newnode.marker.on('dragend', () => {
+            nodeDragEnd();
+        });
+
+        newnode.marker.getElement().addEventListener('dblclick', (event) => {
+            event.stopPropagation();
+            nodeDblClick(newnode, geojson, territoryNodes);
+        });
+
+        node.halfpoint = new maplibregl.Marker({
+                draggable: true,
+                element: document.createElement('div'),
+                className: 'halfpoint-marker'
+        })
+            .setLngLat(getHalfpointPosition(point, nextPoint))
+            .addTo(map);
+
+        newnode.halfpointDragstartSubscription = halfpoint.on('dragstart', () => {
+            addNode(newnode, geojson, territoryNodes);
+        });
+        node.halfpointDragstartSubscription = node.halfpoint.on('dragstart', () => {
+            addNode(node, geojson, territoryNodes);
+        });
+
+        for (let i = node.index; i < territoryNodes.length; i++) {
+            territoryNodes[i].index++;
+        }
+        territoryNodes.splice(newnode.index, 0, newnode);
+        geojson.features[0].geometry.coordinates[0].splice(newnode.index, 0, point);
+        map.getSource(`territory-${editedTerritory.id}`).setData(geojson);
+    }
+
+    function nodeDragEnd() {
+        console.log("DRAG END");
+    }
+
+    function nodeDblClick(node, geojson, territoryNodes) {
+        if (territoryNodes.length <= 3) return;
+
+        node.marker.remove();
+        node.halfpoint.remove();
+
+        territoryNodes.splice(node.index, 1);
+        geojson.features[0].geometry.coordinates[0].splice(node.index, 1);
+
+        if (node.index === 0) {
+            geojson.features[0].geometry.coordinates[0][geojson.features[0].geometry.coordinates[0].length - 1] = geojson.features[0].geometry.coordinates[0][0];
+        }
+
+
+        for (let i = node.index; i < territoryNodes.length; i++) {
+            territoryNodes[i].index--;
+        }
+
+        map.getSource(`territory-${editedTerritory.id}`).setData(geojson);
+
+        // set halfpoint of next node
+        territoryNodes[node.index % territoryNodes.length].halfpoint.setLngLat(getHalfpointPosition(geojson.features[0].geometry.coordinates[0][node.index === 0 ? geojson.features[0].geometry.coordinates[0].length - 1 : node.index - 1], geojson.features[0].geometry.coordinates[0][node.index]));
+    }
+
+
+    function nodeDrag(node, geojson, territoryNodes) {
+        console.log("DRAG", node.index);
+        const lngLat = node.marker.getLngLat();
+
+        geojson.features[0].geometry.coordinates[0][node.index] = [lngLat.lng, lngLat.lat];
+        if (node.index === 0) {
+            geojson.features[0].geometry.coordinates[0][geojson.features[0].geometry.coordinates[0].length - 1] = [lngLat.lng, lngLat.lat];
+        }
+
+        let previousPoint = node.index === 0 ? geojson.features[0].geometry.coordinates[0][geojson.features[0].geometry.coordinates[0].length - 2] : geojson.features[0].geometry.coordinates[0][node.index - 1];
+        node.halfpoint.setLngLat(getHalfpointPosition(previousPoint, [lngLat.lng, lngLat.lat]));
+        
+        let nextPoint = node.index === territoryNodes.length - 1 ? geojson.features[0].geometry.coordinates[0][0] : geojson.features[0].geometry.coordinates[0][node.index + 1];
+        territoryNodes[(node.index + 1) % territoryNodes.length].halfpoint.setLngLat(getHalfpointPosition(nextPoint, [lngLat.lng, lngLat.lat]));
+
+        map.getSource(`territory-${editedTerritory.id}`).setData(geojson);
+    }
+
+
+    function addPointButtonClick() {
+
+        let marker = new maplibregl.Marker({
+                color: 'green',
+                draggable: true,
+                element: document.createElement('div'),
+                className: 'point-marker'
+        })
+            .setLngLat([22, 50])
+            .addTo(map);
+
+
+    }
+
+    function changeFillColor(color) {
+        editedTerritory.fill = color;
+        map.setPaintProperty(`${editedTerritory.id}-fill-layer`, 'fill-color', color);
+    }
+
+    function changeStrokeColor(color) {
+        editedTerritory.stroke = color;
+        map.setPaintProperty(`${editedTerritory.id}-stroke-layer`, 'line-color', color);
+    }
+
+    function changeStrokeWidth(width) {
+        editedTerritory.thickness = parseFloat(width);
+        map.setPaintProperty(`${editedTerritory.id}-stroke-layer`, 'line-width', parseFloat(width));
+    }
+
+    function changeOpacity(opacity) {
+        editedTerritory.opacity = parseFloat(opacity);
+        map.setPaintProperty(`${editedTerritory.id}-fill-layer`, 'fill-opacity', parseFloat(opacity));
+    }
+
+    function toggleEditMode(enabled) {
+        // Implement edit mode toggle logic here
+        
+    }
+
+    function addNewTerritory() {
+        const newTerritory = {
+            number: territories.length + 1,
+            name: `Teren ${territories.length + 1}`,
+            coords: [[22, 50], [22.2, 50], [22.1, 50.2]],
+            fill: "#008",
+            stroke: "#000000",
+            thickness: 5,
+            opacity: 0.2
+        };
+        openTerritory(newTerritory);
+    }
+
+    function save() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(territoriesData));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "territory.json");
+        document.body.appendChild(downloadAnchorNode); // required for firefox
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function load() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (event) => {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = JSON.parse(e.target.result);
+                // Handle the loaded data
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    </script>
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
