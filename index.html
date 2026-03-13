@@ -112,6 +112,7 @@
         }
 
         #territory-list {
+            max-height: 50%;
             overflow-y: auto;
             margin-bottom: 4px;
         }
@@ -528,10 +529,14 @@
     }
 
     function addNewTerritory() {
+
+        let center = map.getCenter();
+        let size = 0.5 / map.getZoom();
+
         const newTerritory = {
             number: territories.length + 1,
             name: `Teren ${territories.length + 1}`,
-            coords: [[22, 50], [22.2, 50], [22.1, 50.2]],
+            coords: [[center.lng - size, center.lat], [center.lng + size, center.lat], [center.lng + size, center.lat + size]],
             fill: "#008",
             stroke: "#000000",
             thickness: 5,
