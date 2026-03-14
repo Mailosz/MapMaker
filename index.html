@@ -578,6 +578,13 @@
         territoryNodes[index].marker.remove();
         territoryNodes[index].halfpoint.remove();
 
+        recordChangeset([{
+            id: editedTerritory.id,
+            data: {
+                coords: Array.from(editedTerritory.coords)
+            }
+        }]);
+
         territoryNodes.splice(index, 1);
         editedTerritory.coords.splice(index, 1);
         geojson.features[0].geometry.coordinates[0].splice(index, 1);
@@ -592,6 +599,8 @@
         }
 
         map.getSource(`territory-source-${editedTerritory.id}`).setData(geojson);
+
+
 
         // set halfpoint of next node
         territoryNodes[index % territoryNodes.length].halfpoint.setLngLat(getHalfpointPosition(geojson.features[0].geometry.coordinates[0][index === 0 ? geojson.features[0].geometry.coordinates[0].length - 1 : index - 1], geojson.features[0].geometry.coordinates[0][index]));
