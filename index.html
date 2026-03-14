@@ -163,7 +163,7 @@
     <script src='https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js'></script>
     <script>
 
-        document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+        document.getElementById("map-container").addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
         let undoStack = [];
         let redoStack = [];
