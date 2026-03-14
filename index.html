@@ -154,13 +154,11 @@
     <div class="overlay" style="position: fixed; left: 10px; bottom: 10px;">
         <details disabled>
             <summary>Lista terenów: <button onclick="save()">Zapisz</button><button onclick="load()">Otwórz</button></summary>
-            <div>
                 <div id="territory-list">
     
                 </div>
-                <button onclick="addNewTerritory()">Dodaj teren</button>
-            </div>
-        </details>
+            </details>
+            <button onclick="addNewTerritory()">Dodaj teren</button>
     </div>
     <script src='https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js'></script>
     <script>
@@ -170,6 +168,7 @@
         let territoryNodes = [];
         let editedTerritory = null;
         let territories = [];
+        let savedOn = 0;
     
     // Initialize the map       
     let map = new maplibregl.Map({
@@ -256,6 +255,14 @@
         data.territories.forEach(territory => {
             loadTerritory(territory);
         });
+    }
+
+    function deleteTerritory(territory) {
+        map.removeLayer(`${territory.id}-fill-layer`);
+        map.removeLayer(`${territory.id}-stroke-layer`);
+        map.removeSource(`territory-source-${territory.id}`);
+        territory.listElement.remove();
+        territories = territories.filter(t => t.id !== territory.id);
     }
 
     function loadTerritory(territoryData) {
@@ -691,17 +698,37 @@
         return inverseChangeset;
     }
 
+    function getJSONtoSave() {
+        return {
+            v: 1,
+            territories: territories.map(t => ({
+                number: t.number,
+                name: t.name,
+                coords: t.coords,
+                fill: t.fill,
+                stroke: t.stroke,
+                thickness: t.thickness,
+                opacity: t.opacity
+            }))
+        }
+    }
+
     function save() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(territoriesData));
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(getJSONtoSave()));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
         downloadAnchorNode.setAttribute("download", "territory.json");
         document.body.appendChild(downloadAnchorNode); // required for firefox
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
+        savedOn = undoStack.length;
     }
 
     function load() {
+        if (undoStack.length > savedOn && !window.confirm("Wczytanie pliku spowoduje utratę niezapisanych zmian. Kontynuować?")) {
+            return;
+        }
+
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json';
@@ -711,10 +738,23 @@
             reader.onload = (e) => {
                 const data = JSON.parse(e.target.result);
                 // Handle the loaded data
+                changeProject(data);
             };
             reader.readAsText(file);
         };
         input.click();
+    }
+
+    function changeProject(data) {
+        removeEditingMarkers();
+        for (let territory of territories) {
+            deleteTerritory(territory);
+        }
+        territories = [];
+        loadData(data);
+        if (territories.length > 0) {
+            selectTerritoryForEditing(territories[0]);
+        }
     }
     
 
