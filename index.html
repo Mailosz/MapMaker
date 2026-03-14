@@ -188,12 +188,28 @@
             cursor: pointer;
             padding: 0.25em 0.5em;
         }
+
+        #draft-list {
+            display: flex; 
+            flex-direction: column;
+            max-height: 400px; 
+            overflow-y: auto;
+        }
+
+        #draft-list>div {
+            display: flex;
+            justify-content: stretch;
+        }
+
+        #draft-list>div>:first-child {
+            flex: 1;
+        }
     </style>
 </head>
 <body class="edit-mode">
     <div id="map-container"></div>
     <div class="overlay" style="position: fixed; top: 10px; left: 10px;">
-        <label>Tryb edycji: <input type="checkbox" id="edit-mode-toggle" onchange="toggleEditMode(this.checked)" checked></label>
+        <label><input type="checkbox" id="edit-mode-toggle" onchange="toggleEditMode(this.checked)" checked> Tryb edycji</label>
         <button id="undo-button" onclick="performUndo()" title="Cofnij">↩</button>
         <button id="redo-button" onclick="performRedo()" title="Ponów">↪</button>
 
@@ -209,14 +225,21 @@
             </form>
         </details>
     </div>
+    <div popover="auto" class="overlay" id="draft-popover" style="padding: 8px; max-width: 500px; text-align: center;">
+        <p>Znaleziono wersję roboczą. Wybierz aby kontynuować pracę:</p>
+        <p>Uwaga: poniższe projekty mogą zostać usunięte w każdej chwili. Zapisz je aby nie stracić swojej pracy.</p>
+        <div id="draft-list"></div>
+    </div>
     <div class="overlay" style="position: fixed; left: 10px; bottom: 10px;">
         <div popover="auto" class="overlay" id="save-popover">
             <div style="display: flex; flex-direction: column;">
+                <label>Nazwa projektu: <br>
+                    <input id="project-name" type="text" onchange="changeProjectName(this.value)">
+                </label>
+                <hr>
                 <button onclick="save();closePopover(this)">Zapisz w pliku</button>
                 <button onclick="load();closePopover(this)">Otwórz z pliku</button>
                 <hr>
-                <button onclick="saveLocal();closePopover(this)">Zapisz w przeglądarce</button>
-                <button onclick="loadLocal();closePopover(this)">Otwórz z przeglądarki</button>
             </div>
         </div>
         <details disabled>
@@ -243,6 +266,56 @@
         let editedTerritory = null;
         let territories = [];
         let savedOn = 0;
+        let currentDraft = {
+            timestamp: Date.now(),
+            data: null
+        };
+        let drafts = [];
+        let currentProjectName = "";
+
+    
+    function findDrafts() {
+        drafts = localStorage.getItem('drafts');
+
+        if (!drafts) {
+            drafts = [];
+        } else {
+            const draftList = document.getElementById('draft-list');
+            
+            drafts = JSON.parse(drafts).filter(draft => draft.data);
+
+            if (drafts.length > 0) {
+                for (let draft of drafts) {
+                    let draftButton = document.createElement('button');
+                    draftButton.innerHTML = `${draft.data.name}&emsp;${new Date(draft.timestamp).toLocaleString()}`;
+                    draftButton.onclick = () => {
+                        currentDraft = draft;
+                        changeProject(draft.data);
+                        closePopover(draftButton);
+                    };
+
+                    let div = document.createElement('div');
+                    div.appendChild(draftButton);
+
+                    let deleteButton = document.createElement('button');
+                    deleteButton.innerText = "Usuń";
+                    deleteButton.onclick = () => {
+                        drafts.splice(drafts.indexOf(draft), 1);
+                        localStorage.setItem('drafts', JSON.stringify(drafts));
+                        div.remove();
+                        if (draftList.firstChild === null) {
+                            document.getElementById('draft-popover')?.hidePopover();
+                        }
+                    };
+                    div.appendChild(deleteButton);
+                    draftList.appendChild(div);
+                }
+                document.getElementById('draft-popover')?.showPopover();
+            }
+        }
+        drafts.push(currentDraft);
+        localStorage.setItem('drafts', JSON.stringify(drafts));
+    }
     
     // Initialize the map       
     let map = new maplibregl.Map({
@@ -282,13 +355,16 @@
         // Add a source and layer displaying a point which will be dragged around.
 
         loadData(data);
-        selectTerritoryForEditing(territories[0]);
+        if (territories.length > 0) {
+            selectTerritoryForEditing(territories[0]);
+        }
+
+        findDrafts();
 
     });
 
     map.on('click', (e) => {
         const features = map.queryRenderedFeatures(e.point);
-        console.log("CLICK", features);
 
         if (features.length > 0 && features[0].source.startsWith('territory-source-')) {
             const territoryId = features[0].source.substring('territory-source-'.length);
@@ -302,30 +378,15 @@
 
     let data = {
         v: 1,
+        name: "Nienazwany projekt",
         territories: [
-            {
-                number: 1,
-                name: "Teren 1",
-                coords: [[22, 50], [22.2, 50], [22.1, 50.2]],
-                fill: "#000088",
-                stroke: "#000000",
-                thickness: 5,
-                opacity: 0.2
-            },
-            {
-                number: 2,
-                name: "Teren 2",
-                coords: [[23, 50], [23.2, 50], [23.1, 50.2]],
-                fill: "#008800",
-                stroke: "#000000",
-                thickness: 5,
-                opacity: 0.2
-
-            }
         ]
     }
 
     function loadData(data) {
+
+        setProjectName(data.name);
+
         data.territories.forEach(territory => {
             const newTerritory = loadTerritory(territory);
             territories.push(newTerritory);
@@ -824,10 +885,14 @@
         selectTerritoryForEditing(newTerritory);
     }
 
+    /**
+     * Records a changeset for undo/redo and saves current project as draft
+     */
     function recordChangeset(changeset) {
-        console.log("RECORD", changeset);
         redoStack = [];
         undoStack.push(changeset);
+
+        updateCurrentDraft();
     }
 
     function performUndo() {
@@ -894,12 +959,15 @@
             selectTerritoryForEditing(editedTerritory);
         }
 
+        updateCurrentDraft();
+
         return inverseChangeset;
     }
 
     function getJSONtoSave() {
         return {
             v: 1,
+            name: currentProjectName,
             territories: territories.map(t => ({
                 number: t.number,
                 name: t.name,
@@ -912,6 +980,23 @@
         }
     }
 
+    function updateCurrentDraft() {
+        currentDraft.timestamp = Date.now();
+        currentDraft.data = getJSONtoSave();
+        localStorage.setItem('drafts', JSON.stringify(drafts));
+    }
+
+    function changeProjectName(name) {
+        setProjectName(name);
+        updateCurrentDraft();
+    }
+
+    function setProjectName(name) {
+        currentProjectName = name;
+        document.getElementById('project-name').value = name;
+        window.document.title = name;
+    }
+
     function save() {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(getJSONtoSave()));
         const downloadAnchorNode = document.createElement('a');
@@ -921,22 +1006,6 @@
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
         savedOn = undoStack.length;
-    }
-
-    function saveLocal() {
-        localStorage.setItem('mapData', JSON.stringify(getJSONtoSave()));
-        savedOn = undoStack.length;
-    }
-
-    function loadLocal() {
-        if (undoStack.length > savedOn && !window.confirm("Wczytanie pliku spowoduje utratę niezapisanych zmian. Kontynuować?")) {
-            return;
-        }
-
-        const data = localStorage.getItem('mapData');
-        if (data) {
-            changeProject(JSON.parse(data));
-        }
     }
 
     function load() {
