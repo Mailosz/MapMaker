@@ -121,6 +121,7 @@
             max-height: 200px;
             overflow-y: auto;
             margin-bottom: 4px;
+            cursor: pointer;
         }
 
         #territory-list>div.selected {
@@ -133,15 +134,19 @@
     <div class="overlay" style="position: fixed; top: 10px; left: 10px;" onclick="addPointButtonClick()">
         <label>Tryb edycji: <input type="checkbox" id="edit-mode-toggle" onchange="toggleEditMode(this.checked)" checked></label>
         <details>
-            <summary>Wygląd:</summary>
-            <p><label>Wypełnienie: <input type="color" onchange="changeFillColor(this.value)"></label></p>
-            <p><label>Obramowanie: <input type="color" onchange="changeStrokeColor(this.value)"></label></p>
-            <p><label>Grubość kreski: <input type="range" min="1" step="0.1" max="10" onchange="changeStrokeWidth(this.value)"></label></p>
-            <p><label>Przezroczystość: <input type="range" min="0" step="0.01" max="1" onchange="changeOpacity(this.value)"></label></p>
+            <summary>Dane terenu:</summary>
+            <form id="territory-form">
+                <p><label>Numer: <input id="number-input" type="number" onchange="changeNumber(this.value)"></label></p>
+                <p><label>Nazwa: <input id="name-input" type="text" onchange="changeName(this.value)"></label></p>
+                <p><label>Wypełnienie: <input id="fill-input" type="color" onchange="changeFillColor(this.value)"></label></p>
+                <p><label>Obramowanie: <input id="stroke-input" type="color" onchange="changeStrokeColor(this.value)"></label></p>
+                <p><label>Grubość kreski: <input id="thickness-input" type="range" min="1" step="0.1" max="10" onchange="changeStrokeWidth(this.value)"></label></p>
+                <p><label>Przezroczystość: <input id="opacity-input" type="range" min="0" step="0.01" max="1" onchange="changeOpacity(this.value)"></label></p>
+            </form>
         </details>
     </div>
     <div class="overlay" style="position: fixed; left: 10px; bottom: 10px;">
-        <details>
+        <details disabled>
             <summary>Lista terenów: <button onclick="save()">Zapisz</button><button onclick="load()">Otwórz</button></summary>
             <div>
                 <div id="territory-list">
@@ -220,7 +225,7 @@
                 number: 1,
                 name: "Teren 1",
                 coords: [[22, 50], [22.2, 50], [22.1, 50.2]],
-                fill: "#008",
+                fill: "#000088",
                 stroke: "#000000",
                 thickness: 5,
                 opacity: 0.2
@@ -229,7 +234,7 @@
                 number: 2,
                 name: "Teren 2",
                 coords: [[23, 50], [23.2, 50], [23.1, 50.2]],
-                fill: "#080",
+                fill: "#008800",
                 stroke: "#000000",
                 thickness: 5,
                 opacity: 0.2
@@ -332,13 +337,25 @@
 
         editedTerritory = territoryData;
         
-        if (!territoryData) return;
+        if (!territoryData) {
+            document.getElementById('territory-form').setAttribute('disabled', '');
+            return;
+        } 
 
         territoryData.coords.forEach((point, index) => {
             createNode(point, index, territoryData.geojson, territoryNodes);
         });
 
         territoryData.listElement.classList.add('selected');
+
+        let form = document.getElementById('territory-form');
+        form.removeAttribute('disabled');
+        document.getElementById('number-input').value = territoryData.number;
+        document.getElementById('name-input').value = territoryData.name;
+        document.getElementById('fill-input').value = territoryData.fill;
+        document.getElementById('stroke-input').value = territoryData.stroke;
+        document.getElementById('thickness-input').value = territoryData.thickness;
+        document.getElementById('opacity-input').value = territoryData.opacity;
     }
 
 
@@ -377,7 +394,7 @@
                 nodeDragEnd();    
             });
             
-            node.halfpointDragstartSubscription = halfpoint.on('dragstart', () => {
+            halfpoint.once('dragstart', () => {
                 addNode(node, geojson, territoryNodes);
             });
     }
@@ -385,13 +402,12 @@
     function getHalfpointPosition(p1, p2) {return [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]}
 
     function addNode(node, geojson, territoryNodes) {
-
-        node.halfpointDragstartSubscription.unsubscribe();
+        if (!editedTerritory) return;
 
         let previousPoint = geojson.features[0].geometry.coordinates[0][node.index === 0 ? geojson.features[0].geometry.coordinates[0].length - 1 : node.index - 1];
         let nextPoint = geojson.features[0].geometry.coordinates[0][node.index];
         let point = getHalfpointPosition(previousPoint, nextPoint);
-
+        editedTerritory.coords.splice(node.index, 0, point);
 
         let halfpoint = new maplibregl.Marker({
                 draggable: true,
@@ -446,12 +462,15 @@
     }
 
     function nodeDblClick(node, geojson, territoryNodes) {
+        if (!editedTerritory) return;
         if (territoryNodes.length <= 3) return;
 
         node.marker.remove();
+        node.marker.getElement().style.background = 'red';
         node.halfpoint.remove();
 
         territoryNodes.splice(node.index, 1);
+        editedTerritory.coords.splice(node.index, 1);
         geojson.features[0].geometry.coordinates[0].splice(node.index, 1);
 
         if (node.index === 0) {
@@ -471,8 +490,10 @@
 
 
     function nodeDrag(node, geojson, territoryNodes) {
-        console.log("DRAG", node.index);
+        if (!editedTerritory) return;
         const lngLat = node.marker.getLngLat();
+
+        editedTerritory.coords[node.index] = [lngLat.lng, lngLat.lat];
 
         geojson.features[0].geometry.coordinates[0][node.index] = [lngLat.lng, lngLat.lat];
         if (node.index === 0) {
@@ -504,23 +525,39 @@
     }
 
     function changeFillColor(color) {
+        if (!editedTerritory) return;
         editedTerritory.fill = color;
         map.setPaintProperty(`${editedTerritory.id}-fill-layer`, 'fill-color', color);
     }
 
     function changeStrokeColor(color) {
+        if (!editedTerritory) return;
         editedTerritory.stroke = color;
         map.setPaintProperty(`${editedTerritory.id}-stroke-layer`, 'line-color', color);
     }
 
     function changeStrokeWidth(width) {
+        if (!editedTerritory) return;
         editedTerritory.thickness = parseFloat(width);
         map.setPaintProperty(`${editedTerritory.id}-stroke-layer`, 'line-width', parseFloat(width));
     }
 
     function changeOpacity(opacity) {
+        if (!editedTerritory) return;
         editedTerritory.opacity = parseFloat(opacity);
         map.setPaintProperty(`${editedTerritory.id}-fill-layer`, 'fill-opacity', parseFloat(opacity));
+    }
+
+    function changeName(name) {
+        if (!editedTerritory) return;
+        editedTerritory.name = name;
+        editedTerritory.listElement.textContent = `${editedTerritory.number} - ${editedTerritory.name}`;
+    }
+
+    function changeNumber(number) {
+        if (!editedTerritory) return;
+        editedTerritory.number = parseInt(number);
+        editedTerritory.listElement.textContent = `${editedTerritory.number} - ${editedTerritory.name}`;
     }
 
     function toggleEditMode(enabled) {
@@ -537,12 +574,12 @@
             number: territories.length + 1,
             name: `Teren ${territories.length + 1}`,
             coords: [[center.lng - size, center.lat], [center.lng + size, center.lat], [center.lng + size, center.lat + size]],
-            fill: "#008",
+            fill: "#000088",
             stroke: "#000000",
             thickness: 5,
             opacity: 0.2
         };
-        openTerritory(newTerritory);
+        selectTerritoryForEditing(openTerritory(newTerritory));
     }
 
     function save() {
