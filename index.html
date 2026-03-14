@@ -300,6 +300,9 @@
                     let deleteButton = document.createElement('button');
                     deleteButton.innerText = "Usuń";
                     deleteButton.onclick = () => {
+                        if (!window.confirm("Czy na pewno chcesz usunąć ten szkic?")) {
+                            return;
+                        }
                         drafts.splice(drafts.indexOf(draft), 1);
                         localStorage.setItem('drafts', JSON.stringify(drafts));
                         div.remove();
