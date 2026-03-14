@@ -163,6 +163,12 @@
             margin-bottom: 4px;
             cursor: pointer;
             display: flex;
+            align-items: center;
+            background-color: rgba(255,255,255,0.2);
+        }
+
+        territory-list-item>button {
+            background-color: inherit;
         }
 
         territory-list-item.selected {
@@ -1056,20 +1062,23 @@
         constructor() {
             super();
 
-            this.attachShadow({ mode: 'open' });
+        }
 
+
+
+        connectedCallback() {
             this.checkbox = document.createElement('input');
             this.checkbox.type = 'checkbox';
             this.checkbox.onchange = () => {
                 this.dispatchEvent(new CustomEvent('visibility-change', { detail: { checked: this.checkbox.checked } }));
             };
             this.checkbox.checked = true;
-            this.shadowRoot.appendChild(this.checkbox);
+            this.appendChild(this.checkbox);
 
 
             this.label = document.createElement('span');
             this.label.style.flex = '1';
-            this.shadowRoot.appendChild(this.label);
+            this.appendChild(this.label);
 
             this.deleteButton = document.createElement('button');
             this.deleteButton.textContent = 'X';
@@ -1077,13 +1086,7 @@
                 event.stopPropagation();
                 this.dispatchEvent(new CustomEvent('delete', { detail: {} }));
             };
-            this.shadowRoot.appendChild(this.deleteButton);
-        }
-
-
-
-        connectedCallback() {
-
+            this.appendChild(this.deleteButton);
         }
 
         disconnectedCallback() {
