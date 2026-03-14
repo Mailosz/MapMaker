@@ -96,25 +96,55 @@
         }
 
         .maplibregl-marker.point-marker {
-            width: 16px;
-            height: 16px;
+            padding: 8px;
+            background-color: transparent;
+            border: none;
+            border-radius: 50%;
+            z-index: 10;
+        }
+
+        .maplibregl-marker.point-marker::before {
+            content: ' ';
+            display: block;
+            width: 12px;
+            height: 12px;
             background-color: cornflowerblue;
             border: 2px solid #555;
             border-radius: 50%;
         }
 
         .maplibregl-marker.halfpoint-marker {
-            width: 12px;
-            height: 12px;
+            padding: 12px;
+            background-color: transparent;
+            border: none;
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        .maplibregl-marker.halfpoint-marker::before {
+            content: ' ';
+            display: block;
+            width: 8px;
+            height: 8px;
             background-color: #99bbff;
             border: 2px solid #555;
             border-radius: 50%;
         }
 
+        .maplibregl-marker.point-marker:hover::before,
+        .maplibregl-marker.halfpoint-marker:hover::before {
+            filter: brightness(1.2);
+        }
+
+        .maplibregl-marker.point-marker:active::before,
+        .maplibregl-marker.halfpoint-marker:active::before {
+            filter: brightness(0.8);
+        }
+
         #territory-list {
-            max-height: 50%;
+            max-height: 50vh;
             overflow-y: auto;
-            margin-bottom: 4px;
+            margin: 4px;
         }
 
         territory-list-item {
@@ -133,7 +163,7 @@
             cursor: pointer;
             padding: 0.5em 1em;
             border: none;
-            background-color: #d0d3d5; 
+            background-color: #f0f3f5; 
         }
 
         button:hover {
@@ -142,6 +172,11 @@
 
         button:active {
             filter: brightness(0.9);
+        }
+
+        summary {
+            cursor: pointer;
+            padding: 0.25em 0.5em;
         }
     </style>
 </head>
@@ -154,7 +189,7 @@
 
         <details>
             <summary>Dane terenu:</summary>
-            <form id="territory-form">
+            <form id="territory-form" style="padding: 8px;">
                 <p><label>Numer: <input id="number-input" type="number" onchange="changeNumber(this.value)"></label></p>
                 <p><label>Nazwa: <input id="name-input" type="text" onchange="changeName(this.value)"></label></p>
                 <p><label>Wypełnienie: <input id="fill-input" type="color" onchange="changeFillColor(this.value)"></label></p>
@@ -762,11 +797,11 @@
         const newTerritoryData = {
             number: territories.length + 1,
             name: `Teren ${territories.length + 1}`,
-            coords: [[center.lng - size, center.lat], [center.lng + size, center.lat], [center.lng + size, center.lat + size]],
-            fill: "#000088",
-            stroke: "#000000",
-            thickness: 5,
-            opacity: 0.2
+            coords: [[center.lng - size, center.lat], [center.lng + size, center.lat], [center.lng, center.lat + size]],
+            fill: document.getElementById("fill-input")?.value ?? "#000088",
+            stroke: document.getElementById("stroke-input")?.value ?? "#000000",
+            thickness: parseFloat(document.getElementById("thickness-input")?.value ?? 5),
+            opacity: parseFloat(document.getElementById("opacity-input")?.value ?? 0.2)
         };
         let newTerritory = loadTerritory(newTerritoryData);
         territories.push(newTerritory);
