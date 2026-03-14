@@ -387,7 +387,7 @@
 
             marker.getElement().addEventListener('dblclick', (event) => {
                 event.stopPropagation();
-                nodeDblClick(node, geojson, territoryNodes);
+                nodeDblClick(node.index, geojson);
             });
 
             marker.on('dragend', () => {
@@ -431,7 +431,7 @@
 
         newnode.marker.getElement().addEventListener('dblclick', (event) => {
             event.stopPropagation();
-            nodeDblClick(newnode, geojson, territoryNodes);
+            nodeDblClick(newnode.index, geojson);
         });
 
         node.halfpoint = new maplibregl.Marker({
@@ -461,31 +461,30 @@
         console.log("DRAG END");
     }
 
-    function nodeDblClick(node, geojson, territoryNodes) {
+    function nodeDblClick(index, geojson) {
         if (!editedTerritory) return;
         if (territoryNodes.length <= 3) return;
 
-        node.marker.remove();
-        node.marker.getElement().style.background = 'red';
-        node.halfpoint.remove();
+        territoryNodes[index].marker.remove();
+        territoryNodes[index].halfpoint.remove();
 
-        territoryNodes.splice(node.index, 1);
-        editedTerritory.coords.splice(node.index, 1);
-        geojson.features[0].geometry.coordinates[0].splice(node.index, 1);
+        territoryNodes.splice(index, 1);
+        editedTerritory.coords.splice(index, 1);
+        geojson.features[0].geometry.coordinates[0].splice(index, 1);
 
-        if (node.index === 0) {
+        if (index === 0) {
             geojson.features[0].geometry.coordinates[0][geojson.features[0].geometry.coordinates[0].length - 1] = geojson.features[0].geometry.coordinates[0][0];
         }
 
 
-        for (let i = node.index; i < territoryNodes.length; i++) {
+        for (let i = index; i < territoryNodes.length; i++) {
             territoryNodes[i].index--;
         }
 
         map.getSource(`territory-source-${editedTerritory.id}`).setData(geojson);
 
         // set halfpoint of next node
-        territoryNodes[node.index % territoryNodes.length].halfpoint.setLngLat(getHalfpointPosition(geojson.features[0].geometry.coordinates[0][node.index === 0 ? geojson.features[0].geometry.coordinates[0].length - 1 : node.index - 1], geojson.features[0].geometry.coordinates[0][node.index]));
+        territoryNodes[index % territoryNodes.length].halfpoint.setLngLat(getHalfpointPosition(geojson.features[0].geometry.coordinates[0][index === 0 ? geojson.features[0].geometry.coordinates[0].length - 1 : index - 1], geojson.features[0].geometry.coordinates[0][index]));
     }
 
 
