@@ -315,7 +315,13 @@
         listElement.onclick = () => {
             selectTerritoryForEditing(territories.find(t => t.id === territory.id));
         };
-
+        listElement.ondblclick = () => {
+            map.fitBounds(territory.geojson.features[0].geometry.coordinates[0].reduce((bounds, coord) => {
+                return bounds.extend(coord);
+            }, new maplibregl.LngLatBounds(territory.geojson.features[0].geometry.coordinates[0][0], territory.geojson.features[0].geometry.coordinates[0][0])), {
+                padding: 100
+            });
+        };
         document.getElementById('territory-list').appendChild(listElement);
         listElement.addEventListener('visibility-change', (event) => {
             const checked = event.detail.checked;
