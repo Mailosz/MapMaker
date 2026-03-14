@@ -743,7 +743,8 @@
     function addNewTerritory() {
 
         let center = map.getCenter();
-        let size = 0.5 / map.getZoom();
+        let projected = map.project(center);
+        let size = map.unproject([projected.x + 50, projected.y + 50]).lng - map.unproject(projected).lng;
 
         const newTerritoryData = {
             number: territories.length + 1,
