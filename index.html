@@ -117,16 +117,19 @@
             margin-bottom: 4px;
         }
 
-        #territory-list>div {
+        territory-list-item {
             max-height: 200px;
             overflow-y: auto;
             margin-bottom: 4px;
             cursor: pointer;
+            display: flex;
         }
 
-        #territory-list>div.selected {
+        territory-list-item.selected {
             background-color: cornflowerblue;
         }
+
+
     </style>
 </head>
 <body class="edit-mode">
@@ -294,8 +297,8 @@
         }); 
 
 
-        let listElement = document.createElement('div');
-        listElement.textContent = `${territoryData.number} - ${territoryData.name}`;
+        let listElement = document.createElement('territory-list-item');
+        listElement.setAttribute('label', `${territoryData.number} - ${territoryData.name}`);
         listElement.onclick = () => {
             selectTerritoryForEditing(territories.find(t => t.id === id));
         };
@@ -315,9 +318,28 @@
             listElement: listElement
         };
 
+        listElement.addEventListener('visibility-change', (event) => {
+            const checked = event.detail.checked;
+            if (checked) {
+                showTerritory(newTerritory);
+            } else {
+                hideTerritory(newTerritory);
+            }
+        });
+
         territories.push(newTerritory);
 
         return newTerritory;
+    }
+
+    function showTerritory(territory) {
+        map.setLayoutProperty(`${territory.id}-fill-layer`, 'visibility', 'visible');
+        map.setLayoutProperty(`${territory.id}-stroke-layer`, 'visibility', 'visible');
+    }
+
+    function hideTerritory(territory) {
+        map.setLayoutProperty(`${territory.id}-fill-layer`, 'visibility', 'none');
+        map.setLayoutProperty(`${territory.id}-stroke-layer`, 'visibility', 'none');
     }
 
     function removeEditingMarkers() {
@@ -329,6 +351,7 @@
     }
 
     function selectTerritoryForEditing(territoryData) {
+        console.log("SELECT", territoryData);
         removeEditingMarkers();
 
         if (editedTerritory) {
@@ -388,6 +411,10 @@
             marker.getElement().addEventListener('dblclick', (event) => {
                 event.stopPropagation();
                 nodeDblClick(node.index, geojson);
+            });            
+            
+            marker.getElement().addEventListener('click', (event) => {
+                event.stopPropagation();
             });
 
             marker.on('dragend', () => {
@@ -432,6 +459,10 @@
         newnode.marker.getElement().addEventListener('dblclick', (event) => {
             event.stopPropagation();
             nodeDblClick(newnode.index, geojson);
+        });            
+        
+        newnode.marker.getElement().addEventListener('click', (event) => {
+            event.stopPropagation();
         });
 
         node.halfpoint = new maplibregl.Marker({
@@ -550,13 +581,13 @@
     function changeName(name) {
         if (!editedTerritory) return;
         editedTerritory.name = name;
-        editedTerritory.listElement.textContent = `${editedTerritory.number} - ${editedTerritory.name}`;
+        editedTerritory.listElement.setAttribute('label', `${editedTerritory.number} - ${editedTerritory.name}`);
     }
 
     function changeNumber(number) {
         if (!editedTerritory) return;
         editedTerritory.number = parseInt(number);
-        editedTerritory.listElement.textContent = `${editedTerritory.number} - ${editedTerritory.name}`;
+        editedTerritory.listElement.setAttribute('label', `${editedTerritory.number} - ${editedTerritory.name}`);
     }
 
     function toggleEditMode(enabled) {
@@ -606,6 +637,54 @@
         };
         input.click();
     }
+
+
+    class TerritoryListItem extends HTMLElement {
+
+        static observedAttributes = ["label"];
+
+        constructor() {
+            super();
+
+            this.attachShadow({ mode: 'open' });
+
+            this.checkbox = document.createElement('input');
+            this.checkbox.type = 'checkbox';
+            this.checkbox.onchange = () => {
+                this.dispatchEvent(new CustomEvent('visibility-change', { detail: { checked: this.checkbox.checked } }));
+            };
+            this.checkbox.checked = true;
+            this.shadowRoot.appendChild(this.checkbox);
+
+
+            this.label = document.createElement('span');
+            this.shadowRoot.appendChild(this.label);
+        }
+
+
+
+        connectedCallback() {
+
+        }
+
+        disconnectedCallback() {
+            console.log(`Custom element removed (${this.constructor.name})`);
+        }
+
+        adoptedCallback() {
+            console.log(`Custom element moved to new document (${this.constructor.name})`);
+        }
+
+        attributeChangedCallback(name, oldValue, newValue) {
+            if (name === 'label') {
+                this.label.textContent = newValue;
+            }
+        }
+
+    }
+
+
+        window.customElements.define("territory-list-item", TerritoryListItem);
 
     </script>
     <script type="module" src="./main.js"></script>
