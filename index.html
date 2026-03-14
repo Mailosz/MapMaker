@@ -152,16 +152,30 @@
         </details>
     </div>
     <div class="overlay" style="position: fixed; left: 10px; bottom: 10px;">
+        <div popover="auto" class="overlay" id="save-popover">
+            <div style="display: flex; flex-direction: column;">
+                <button onclick="save();closePopover(this)">Zapisz w pliku</button>
+                <button onclick="load();closePopover(this)">Otwórz z pliku</button>
+                <hr>
+                <button onclick="saveLocal();closePopover(this)">Zapisz w przeglądarce</button>
+                <button onclick="loadLocal();closePopover(this)">Otwórz z przeglądarki</button>
+            </div>
+        </div>
         <details disabled>
-            <summary>Lista terenów: <button onclick="save()">Zapisz</button><button onclick="load()">Otwórz</button></summary>
+            <summary>Lista terenów: <button popovertarget="save-popover" popovertargetaction="toggle">...</button> </summary>
                 <div id="territory-list">
-    
+
                 </div>
             </details>
-            <button onclick="addNewTerritory()">Dodaj teren</button>
+            <button onclick="addNewTerritory()">Dodaj teren</button>&emsp;
     </div>
     <script src='https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js'></script>
     <script>
+
+        function closePopover(el) {
+            const popover = el.closest('[popover]');
+            popover.hidePopover();
+        }
 
         document.getElementById("map-container").addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
@@ -850,6 +864,22 @@
         savedOn = undoStack.length;
     }
 
+    function saveLocal() {
+        localStorage.setItem('mapData', JSON.stringify(getJSONtoSave()));
+        savedOn = undoStack.length;
+    }
+
+    function loadLocal() {
+        if (undoStack.length > savedOn && !window.confirm("Wczytanie pliku spowoduje utratę niezapisanych zmian. Kontynuować?")) {
+            return;
+        }
+
+        const data = localStorage.getItem('mapData');
+        if (data) {
+            changeProject(JSON.parse(data));
+        }
+    }
+
     function load() {
         if (undoStack.length > savedOn && !window.confirm("Wczytanie pliku spowoduje utratę niezapisanych zmian. Kontynuować?")) {
             return;
@@ -881,6 +911,9 @@
         if (territories.length > 0) {
             selectTerritoryForEditing(territories[0]);
         }
+        undoStack = [];
+        redoStack = [];
+        savedOn = 0;
     }
     
 
