@@ -134,7 +134,7 @@
 </head>
 <body class="edit-mode">
     <div id="map-container"></div>
-    <div class="overlay" style="position: fixed; top: 10px; left: 10px;" onclick="addPointButtonClick()">
+    <div class="overlay" style="position: fixed; top: 10px; left: 10px;">
         <label>Tryb edycji: <input type="checkbox" id="edit-mode-toggle" onchange="toggleEditMode(this.checked)" checked></label>
         <button id="undo-button" onclick="performUndo()" title="Cofnij">↩</button>
         <button id="redo-button" onclick="performRedo()" title="Ponów">↪</button>
@@ -215,6 +215,7 @@
 
     map.on('click', (e) => {
         const features = map.queryRenderedFeatures(e.point);
+        console.log("CLICK", features);
 
         if (features.length > 0 && features[0].source.startsWith('territory-source-')) {
             const territoryId = features[0].source.substring('territory-source-'.length);
@@ -586,20 +587,6 @@
     }
 
 
-    function addPointButtonClick() {
-
-        let marker = new maplibregl.Marker({
-                color: 'green',
-                draggable: true,
-                element: document.createElement('div'),
-                className: 'point-marker'
-        })
-            .setLngLat([22, 50])
-            .addTo(map);
-
-
-    }
-
     function changeFillColor(color) {
         if (!editedTerritory) return;
         editedTerritory.fill = color;
@@ -637,7 +624,6 @@
     }
 
     function toggleEditMode(enabled) {
-        // Implement edit mode toggle logic here
         document.body.classList.toggle('edit-mode');
     }
 
@@ -679,7 +665,6 @@
     }
 
     function commitChangeset(changeset) {
-        
         let inverseChangeset = [];
 
         for (let change of changeset) {
