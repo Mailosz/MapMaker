@@ -253,16 +253,91 @@
 
     function loadData(data) {
         data.territories.forEach(territory => {
-            loadTerritory(territory);
+            const newTerritory = loadTerritory(territory);
+            territories.push(newTerritory);
         });
     }
 
-    function deleteTerritory(territory) {
+    function deleteTerritoryVisuals(territory) {
         map.removeLayer(`${territory.id}-fill-layer`);
         map.removeLayer(`${territory.id}-stroke-layer`);
         map.removeSource(`territory-source-${territory.id}`);
         territory.listElement.remove();
-        territories = territories.filter(t => t.id !== territory.id);
+    }
+
+    function deleteTerritory(territory) {
+        let index = territories.findIndex(t => t.id === territory.id);
+        deleteTerritoryVisuals(territory);
+        territories.splice(index, 1);
+
+        if (editedTerritory && editedTerritory.id === territory.id) {
+            selectTerritoryForEditing(null);
+        }
+
+        return index;
+    }
+
+    function createTerritoryVisuals(territory) {
+        
+
+        map.addSource(`territory-source-${territory.id}`, {
+            'type': 'geojson',
+            'data': territory.geojson
+        });
+
+        map.addLayer({
+            'id': `${territory.id}-fill-layer`,
+            'type': 'fill',
+            'source': `territory-source-${territory.id}`,
+            'layout': {},
+            'paint': {
+                'fill-color': territory.fill,
+                'fill-opacity': territory.opacity,
+            }
+        });
+
+        map.addLayer({
+            'id': `${territory.id}-stroke-layer`,
+            'type': 'line',
+            'source': `territory-source-${territory.id}`,
+            'layout': {},
+            'paint': {
+                'line-color': territory.stroke,
+                'line-width': territory.thickness,
+            }
+        }); 
+
+        if (territory.listElement) {
+            territory.listElement.remove();
+        }
+        let listElement = document.createElement('territory-list-item');
+        territory.listElement = listElement;
+        listElement.onclick = () => {
+            selectTerritoryForEditing(territories.find(t => t.id === territory.id));
+        };
+
+        document.getElementById('territory-list').appendChild(listElement);
+        listElement.addEventListener('visibility-change', (event) => {
+            const checked = event.detail.checked;
+            if (checked) {
+                showTerritory(territory);
+            } else {
+                hideTerritory(territory);
+            }
+        });
+        listElement.addEventListener('delete', () => {
+            if (!window.confirm(`Czy na pewno chcesz usunąć teren ${territory.number} - ${territory.name}?`)) {
+                return;
+            }
+            if (editedTerritory && editedTerritory.id === territory.id) {
+                selectTerritoryForEditing(null);
+            }
+            let index = deleteTerritory(territory);
+            recordChangeset([{
+                index: index,
+                data: territory
+            }]);
+        });
     }
 
     function loadTerritory(territoryData) {
@@ -281,47 +356,6 @@
                 }
             ]
         };
-
-        map.addSource(`territory-source-${id}`, {
-            'type': 'geojson',
-            'data': geojson
-        });
-
-        map.addLayer({
-            'id': `${id}-fill-layer`,
-            'type': 'fill',
-            'source': `territory-source-${id}`,
-            'layout': {},
-            'paint': {
-                'fill-color': territoryData.fill,
-                'fill-opacity': territoryData.opacity,
-            }
-        });
-
-        map.addLayer({
-            'id': `${id}-stroke-layer`,
-            'type': 'line',
-            'source': `territory-source-${id}`,
-            'layout': {},
-            'paint': {
-                'line-color': territoryData.stroke,
-                'line-width': territoryData.thickness,
-            }
-        }); 
-
-        let listElement = document.createElement('territory-list-item');
-        listElement.onclick = () => {
-            selectTerritoryForEditing(territories.find(t => t.id === id));
-        };
-        document.getElementById('territory-list').appendChild(listElement);
-        listElement.addEventListener('visibility-change', (event) => {
-            const checked = event.detail.checked;
-            if (checked) {
-                showTerritory(newTerritory);
-            } else {
-                hideTerritory(newTerritory);
-            }
-        });
         
         let newTerritory = {
             id: id, 
@@ -333,12 +367,12 @@
             stroke: territoryData.stroke, 
             thickness: territoryData.thickness, 
             opacity: territoryData.opacity,
-            listElement: listElement
+            listElement: null
         };
 
-        updateTerrritory(newTerritory);
+        createTerritoryVisuals(newTerritory);
 
-        territories.push(newTerritory);
+        updateTerrritory(newTerritory);
         
         return newTerritory;
     }
@@ -639,7 +673,7 @@
         let center = map.getCenter();
         let size = 0.5 / map.getZoom();
 
-        const newTerritory = {
+        const newTerritoryData = {
             number: territories.length + 1,
             name: `Teren ${territories.length + 1}`,
             coords: [[center.lng - size, center.lat], [center.lng + size, center.lat], [center.lng + size, center.lat + size]],
@@ -648,7 +682,15 @@
             thickness: 5,
             opacity: 0.2
         };
-        selectTerritoryForEditing(loadTerritory(newTerritory));
+        let newTerritory = loadTerritory(newTerritoryData);
+        territories.push(newTerritory);
+
+        recordChangeset([{
+             id: newTerritory.id,
+             data: null
+        }]);
+
+        selectTerritoryForEditing(newTerritory);
     }
 
     function recordChangeset(changeset) {
@@ -675,19 +717,45 @@
         let inverseChangeset = [];
 
         for (let change of changeset) {
-            let territory = territories.find(t => t.id === change.id);
-            if (!territory) throw new Error("Territory not found for change commit");
+            if (change.id) {
+                if (change.data === null) { // created territory
+                    let createdTerritory = territories.find(t => t.id === change.id);
+                    if (!createdTerritory) throw new Error("Territory not found for change commit");
 
-            let previousData = {};
-            for (let key in change.data) {
-                previousData[key] = territory[key];
-                territory[key] = change.data[key];
+                    let index = deleteTerritory(createdTerritory);
+                    
+                    inverseChangeset.push({
+                        index: index,
+                        data: createdTerritory
+                    });
+                } else { // changed territory
+                    let territory = territories.find(t => t.id === change.id);
+                    if (!territory) throw new Error("Territory not found for change commit");
+
+                    let previousData = {};
+                    for (let key in change.data) {
+                        previousData[key] = territory[key];
+                        territory[key] = change.data[key];
+                    }
+
+                    inverseChangeset.push({
+                        id: territory.id,
+                        data: previousData
+                    });
+                }
+            } else { // delete territory
+                let deletedTerritory = change.data;
+                territories.splice(change.index, 0, deletedTerritory);
+                createTerritoryVisuals(deletedTerritory);
+                //TODO: move listElement to correct position in list
+
+                inverseChangeset.push({
+                    id: deletedTerritory.id,
+                    data: null
+                });
             }
 
-            inverseChangeset.push({
-                id: territory.id,
-                data: previousData
-            });
+
         }
 
         updateAllTerritories();
@@ -748,7 +816,7 @@
     function changeProject(data) {
         removeEditingMarkers();
         for (let territory of territories) {
-            deleteTerritory(territory);
+            deleteTerritoryVisuals(territory);
         }
         territories = [];
         loadData(data);
@@ -778,7 +846,16 @@
 
 
             this.label = document.createElement('span');
+            this.label.style.flex = '1';
             this.shadowRoot.appendChild(this.label);
+
+            this.deleteButton = document.createElement('button');
+            this.deleteButton.textContent = 'X';
+            this.deleteButton.onclick = (event) => {
+                event.stopPropagation();
+                this.dispatchEvent(new CustomEvent('delete', { detail: {} }));
+            };
+            this.shadowRoot.appendChild(this.deleteButton);
         }
 
 
