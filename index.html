@@ -136,6 +136,9 @@
     <div id="map-container"></div>
     <div class="overlay" style="position: fixed; top: 10px; left: 10px;" onclick="addPointButtonClick()">
         <label>Tryb edycji: <input type="checkbox" id="edit-mode-toggle" onchange="toggleEditMode(this.checked)" checked></label>
+        <button id="undo-button" onclick="performUndo()" title="Cofnij">↩</button>
+        <button id="redo-button" onclick="performRedo()" title="Ponów">↪</button>
+
         <details>
             <summary>Dane terenu:</summary>
             <form id="territory-form">
@@ -162,6 +165,8 @@
     <script src='https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js'></script>
     <script>
 
+        let undoStack = [];
+        let redoStack = [];
         let territoryNodes = [];
         let editedTerritory = null;
         let territories = [];
@@ -248,11 +253,11 @@
 
     function loadData(data) {
         data.territories.forEach(territory => {
-            openTerritory(territory);
+            loadTerritory(territory);
         });
     }
 
-    function openTerritory(territoryData) {
+    function loadTerritory(territoryData) {
 
         const id = crypto.randomUUID();
 
@@ -296,15 +301,20 @@
             }
         }); 
 
-
         let listElement = document.createElement('territory-list-item');
-        listElement.setAttribute('label', `${territoryData.number} - ${territoryData.name}`);
         listElement.onclick = () => {
             selectTerritoryForEditing(territories.find(t => t.id === id));
         };
         document.getElementById('territory-list').appendChild(listElement);
-
-
+        listElement.addEventListener('visibility-change', (event) => {
+            const checked = event.detail.checked;
+            if (checked) {
+                showTerritory(newTerritory);
+            } else {
+                hideTerritory(newTerritory);
+            }
+        });
+        
         let newTerritory = {
             id: id, 
             number: territoryData.number, 
@@ -318,18 +328,35 @@
             listElement: listElement
         };
 
-        listElement.addEventListener('visibility-change', (event) => {
-            const checked = event.detail.checked;
-            if (checked) {
-                showTerritory(newTerritory);
-            } else {
-                hideTerritory(newTerritory);
-            }
-        });
+        updateTerrritory(newTerritory);
 
         territories.push(newTerritory);
-
+        
         return newTerritory;
+    }
+
+    function updateAllTerritories() {
+        
+        for (let territory of territories) {
+            updateTerrritory(territory);
+        }
+    }
+
+    function updateTerrritory(territoryData) {
+        territoryData.geojson = {
+            'type': 'FeatureCollection',
+            'features': [
+                {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Polygon',
+                        'coordinates': [[...territoryData.coords, territoryData.coords[0]]]
+                    }
+                }
+            ]
+        };
+        map.getSource(`territory-source-${territoryData.id}`).setData(territoryData.geojson);
+        territoryData.listElement.setAttribute('label', `${territoryData.number} - ${territoryData.name}`);
     }
 
     function showTerritory(territory) {
@@ -418,7 +445,7 @@
             });
 
             marker.on('dragend', () => {
-                nodeDragEnd();    
+                nodeDragEnd(node);    
             });
             
             halfpoint.once('dragstart', () => {
@@ -434,13 +461,12 @@
         let previousPoint = geojson.features[0].geometry.coordinates[0][node.index === 0 ? geojson.features[0].geometry.coordinates[0].length - 1 : node.index - 1];
         let nextPoint = geojson.features[0].geometry.coordinates[0][node.index];
         let point = getHalfpointPosition(previousPoint, nextPoint);
-        editedTerritory.coords.splice(node.index, 0, point);
-
+        
         let halfpoint = new maplibregl.Marker({
-                draggable: true,
+            draggable: true,
                 element: document.createElement('div'),
                 className: 'halfpoint-marker'
-        })
+            })
             .setLngLat(getHalfpointPosition(previousPoint, point))
             .addTo(map);
         
@@ -451,11 +477,11 @@
         newnode.marker.on('drag', () => {
             nodeDrag(newnode, geojson, territoryNodes);
         });
-
+        
         newnode.marker.on('dragend', () => {
-            nodeDragEnd();
+            nodeDragEnd(newnode);
         });
-
+        
         newnode.marker.getElement().addEventListener('dblclick', (event) => {
             event.stopPropagation();
             nodeDblClick(newnode.index, geojson);
@@ -464,32 +490,37 @@
         newnode.marker.getElement().addEventListener('click', (event) => {
             event.stopPropagation();
         });
-
+        
         node.halfpoint = new maplibregl.Marker({
-                draggable: true,
-                element: document.createElement('div'),
-                className: 'halfpoint-marker'
+            draggable: true,
+            element: document.createElement('div'),
+            className: 'halfpoint-marker'
         })
-            .setLngLat(getHalfpointPosition(point, nextPoint))
-            .addTo(map);
-
-        newnode.halfpointDragstartSubscription = halfpoint.on('dragstart', () => {
+        .setLngLat(getHalfpointPosition(point, nextPoint))
+        .addTo(map);
+        
+        halfpoint.once('dragstart', () => {
             addNode(newnode, geojson, territoryNodes);
         });
-        node.halfpointDragstartSubscription = node.halfpoint.on('dragstart', () => {
+        node.halfpoint.once('dragstart', () => {
             addNode(node, geojson, territoryNodes);
         });
-
+        
         for (let i = node.index; i < territoryNodes.length; i++) {
             territoryNodes[i].index++;
         }
+        
+        recordChangeset([{
+            id: editedTerritory.id,
+            data: {
+                coords: Array.from(editedTerritory.coords)
+            }
+        }]);
+        editedTerritory.coords.splice(newnode.index, 0, point);
         territoryNodes.splice(newnode.index, 0, newnode);
+
         geojson.features[0].geometry.coordinates[0].splice(newnode.index, 0, point);
         map.getSource(`territory-source-${editedTerritory.id}`).setData(geojson);
-    }
-
-    function nodeDragEnd() {
-        console.log("DRAG END");
     }
 
     function nodeDblClick(index, geojson) {
@@ -523,7 +554,6 @@
         if (!editedTerritory) return;
         const lngLat = node.marker.getLngLat();
 
-        editedTerritory.coords[node.index] = [lngLat.lng, lngLat.lat];
 
         geojson.features[0].geometry.coordinates[0][node.index] = [lngLat.lng, lngLat.lat];
         if (node.index === 0) {
@@ -537,6 +567,22 @@
         territoryNodes[(node.index + 1) % territoryNodes.length].halfpoint.setLngLat(getHalfpointPosition(nextPoint, [lngLat.lng, lngLat.lat]));
 
         map.getSource(`territory-source-${editedTerritory.id}`).setData(geojson);
+    }
+
+    function nodeDragEnd(node) {
+        let lastCoord = editedTerritory.coords[node.index];
+        const lngLat = node.marker.getLngLat();
+
+        let changeset = [{
+            id: editedTerritory.id,
+            data: {
+                coords: Array.from(editedTerritory.coords)
+            }
+        }];
+
+        editedTerritory.coords[node.index] = [lngLat.lng, lngLat.lat];
+
+        recordChangeset(changeset);
     }
 
 
@@ -609,7 +655,55 @@
             thickness: 5,
             opacity: 0.2
         };
-        selectTerritoryForEditing(openTerritory(newTerritory));
+        selectTerritoryForEditing(loadTerritory(newTerritory));
+    }
+
+    function recordChangeset(changeset) {
+        console.log("RECORD", changeset);
+        redoStack = [];
+        undoStack.push(changeset);
+    }
+
+    function performUndo() {
+        if (undoStack.length === 0) return;
+        const changeset = undoStack.pop();
+        console.log("UNDO", changeset);
+        redoStack.push(commitChangeset(changeset));
+    }
+
+    function performRedo() {
+        if (redoStack.length === 0) return;
+        const changeset = redoStack.pop();
+        console.log("REDO", changeset);
+        undoStack.push(commitChangeset(changeset));
+    }
+
+    function commitChangeset(changeset) {
+        
+        let inverseChangeset = [];
+
+        for (let change of changeset) {
+            let territory = territories.find(t => t.id === change.id);
+            if (!territory) throw new Error("Territory not found for change commit");
+
+            let previousData = {};
+            for (let key in change.data) {
+                previousData[key] = territory[key];
+                territory[key] = change.data[key];
+            }
+
+            inverseChangeset.push({
+                id: territory.id,
+                data: previousData
+            });
+        }
+
+        updateAllTerritories();
+        if (editedTerritory) {
+            selectTerritoryForEditing(editedTerritory);
+        }
+
+        return inverseChangeset;
     }
 
     function save() {
@@ -637,6 +731,7 @@
         };
         input.click();
     }
+    
 
 
     class TerritoryListItem extends HTMLElement {
