@@ -308,7 +308,7 @@
         } else {
             const draftList = document.getElementById('draft-list');
             
-            drafts = JSON.parse(drafts).filter(draft => draft.data);
+            drafts = JSON.parse(drafts).filter(draft => draft.data).sort((a, b) => b.timestamp - a.timestamp);
 
             if (drafts.length > 0) {
                 for (let draft of drafts) {
