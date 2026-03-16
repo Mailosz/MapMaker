@@ -230,6 +230,16 @@
         #draft-list>div>:first-child {
             flex: 1;
         }
+
+        .controls-div {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .controls-div>button {
+            font-size: large;
+        }
     </style>
 </head>
 <body class="edit-mode">
@@ -274,7 +284,11 @@
 
                 </div>
             </details>
-            <button onclick="addNewTerritory()">Dodaj teren</button>&emsp;
+            <div class="controls-div">
+                <label><input id="show-all" type="checkbox" checked onchange="toggleShowAll(this.checked)">Pokazuj</label>
+                <button onclick="addNewTerritory()" title="Dodaj teren">+</button>
+
+            </div>
     </div>
     <script src='https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js'></script>
     <script>
@@ -498,12 +512,18 @@
             });
         };
         document.getElementById('territory-list').appendChild(listElement);
-        listElement.addEventListener('visibility-change', (event) => {
+        listElement.addEventListener('checked-change', (event) => {
             const checked = event.detail.checked;
             if (checked) {
                 showTerritory(territory);
             } else {
                 hideTerritory(territory);
+            }
+
+            let showAll = document.getElementById("show-all");
+            if (showAll) {
+                showAll.isChecked = territories.every(t => t.listElement.checkbox.checked);
+                showAll.indeterminate = !showAll.isChecked && territories.some(t => t.listElement.checkbox.checked);
             }
         });
         listElement.addEventListener('delete', () => {
@@ -518,6 +538,17 @@
                 index: index,
                 data: territory
             }]);
+        });
+    }
+
+    function toggleShowAll(show) {
+        territories.forEach(territory => {
+            if (show) {
+                showTerritory(territory);
+            } else {
+                hideTerritory(territory);
+            }
+            territory.listElement.checkbox.checked = show;
         });
     }
 
@@ -1111,7 +1142,7 @@
             this.checkbox = document.createElement('input');
             this.checkbox.type = 'checkbox';
             this.checkbox.onchange = () => {
-                this.dispatchEvent(new CustomEvent('visibility-change', { detail: { checked: this.checkbox.checked } }));
+                this.dispatchEvent(new CustomEvent('checked-change', { detail: { checked: this.checkbox.checked } }));
             };
             this.checkbox.checked = true;
             this.appendChild(this.checkbox);
