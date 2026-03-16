@@ -433,18 +433,24 @@
     let data = {
         v: 1,
         name: "Nienazwany projekt",
-        territories: [
-        ]
+        groups: [
+            {
+                territories: []
+            }
+        ],
     }
 
     function loadData(data) {
 
         setProjectName(data.name);
 
-        data.territories.forEach(territory => {
-            const newTerritory = loadTerritory(territory);
-            territories.push(newTerritory);
+        data.groups.forEach(group => {
+            group.territories.forEach(territory => {
+                const newTerritory = loadTerritory(territory);
+                territories.push(newTerritory);
+            });
         });
+
     }
 
     function deleteTerritoryVisuals(territory) {
@@ -1039,15 +1045,17 @@
         return {
             v: 1,
             name: currentProjectName,
-            territories: territories.map(t => ({
-                number: t.number,
-                name: t.name,
-                coords: t.coords,
-                fill: t.fill,
-                stroke: t.stroke,
-                thickness: t.thickness,
-                opacity: t.opacity
-            }))
+            groups: [{
+                territories: territories.map(t => ({
+                    number: t.number,
+                    name: t.name,
+                    coords: t.coords,
+                    fill: t.fill,
+                    stroke: t.stroke,
+                    thickness: t.thickness,
+                    opacity: t.opacity
+                }))
+            }],
         }
     }
 
