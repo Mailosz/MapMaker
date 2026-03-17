@@ -26,6 +26,7 @@
             flex: 1;
             height: 100vh;
             position: relative;
+            overflow: hidden;
         }
 
         .maplibregl-canvas-container {
@@ -284,6 +285,16 @@
                 <button onclick="save();closePopover(this)">Zapisz w pliku</button>
                 <button onclick="load();closePopover(this)">Otwórz z pliku</button>
                 <hr>
+                <details>
+                    <summary>Pokazuj:</summary>
+                    <div style="display: flex; flex-direction: column;">
+                        <label><input type="checkbox" onchange="toggleShowLayer('building_number',this.checked)" checked> Numery domów</label>
+                        <label><input type="checkbox" onchange="toggleShowLayer('poi_r1',this.checked)" checked> Wybrane miejsca</label>
+                        <label><input type="checkbox" onchange="toggleShowLayer('poi_transit',this.checked)" checked> Przystanki i parkingi</label>
+                        <label><input type="checkbox" onchange="toggleShowLayer('label_other',this.checked)" checked> Nazwy osiedli</label>
+                        <label><input type="checkbox" onchange="toggleShowLayer('label_village',this.checked)" checked> Nazwy wsi</label>
+                    </div>
+                </details>
             </div>
         </div>
         <details>
@@ -368,29 +379,31 @@
         localStorage.setItem('drafts', JSON.stringify(drafts));
     }
     
+
     // Initialize the map       
     let map = new maplibregl.Map({
         container: 'map-container',
-        style: {
-            version: 8,
-            sources: {
-                osm: {
-                    type: 'raster',
-                    tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'],
-                    tileSize: 256,
-                    attribution: '&copy; OpenStreetMap Contributors',
-                    maxzoom: 19
-                },
-            },
-            layers: [
-                {
-                    id: 'osm',
-                    type: 'raster',
-                    source: 'osm'
-                },
-            ]
-        },
+        // style: {
+        //     version: 8,
+        //     sources: {
+        //         osm: {
+        //             type: 'raster',
+        //             tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        //             tileSize: 256,
+        //             attribution: '&copy; OpenStreetMap Contributors',
+        //             maxzoom: 19
+        //         },
+        //     },
+        //     layers: [
+        //         {
+        //             id: 'osm',
+        //             type: 'raster',
+        //             source: 'osm'
+        //         },
+        //     ]
+        // },
         // style: "https://tiles.openfreemap.org/styles/bright",
+        style: "style.json",
         center: [22, 50], // starting position [lng, lat]
         zoom: 9 // starting zoom
     });
@@ -412,6 +425,8 @@
             trackUserLocation: false
         })
     );
+    map.doubleClickZoom.disable();
+
 
     map.on('load', () => {
         // Add a source and layer displaying a point which will be dragged around.
@@ -435,6 +450,12 @@
         } else {
             selectTerritoryForEditing(null);
         }
+    });
+
+    map.on('dblclick', (e) => {
+        const features = map.queryRenderedFeatures(e.point);
+
+        console.log("Features:",features);
     });
 
 
@@ -651,7 +672,6 @@
     }
 
     function selectTerritoryForEditing(territoryData) {
-        console.log("SELECT", territoryData);
         removeEditingMarkers();
 
         if (editedTerritory) {
@@ -1140,8 +1160,11 @@
         redoStack = [];
         savedOn = 0;
     }
-    
 
+    function toggleShowLayer(layerName,show) {
+        map.setLayoutProperty(layerName, 'visibility', show ? 'visible' : 'none');
+    }
+    
 
     class TerritoryListItem extends HTMLElement {
 
