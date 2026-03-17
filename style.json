@@ -4779,6 +4779,76 @@
             }
         },
         {
+            "id": "boundary_9",
+            "type": "line",
+            "source": "openmaptiles",
+            "source-layer": "boundary",
+            "minzoom": 10,
+            "filter": [
+                "all",
+                [
+                    ">=",
+                    [
+                        "get",
+                        "admin_level"
+                    ],
+                    7
+                ],
+                [
+                    "<=",
+                    [
+                        "get",
+                        "admin_level"
+                    ],
+                    9
+                ],
+                [
+                    "!=",
+                    [
+                        "get",
+                        "maritime"
+                    ],
+                    1
+                ],
+                [
+                    "!=",
+                    [
+                        "get",
+                        "disputed"
+                    ],
+                    1
+                ],
+                [
+                    "!",
+                    [
+                        "has",
+                        "claimed_by"
+                    ]
+                ]
+            ],
+            "paint": {
+                "line-color": "hsl(0,0%,70%)",
+                "line-dasharray": [
+                    1,
+                    1
+                ],
+                "line-width": [
+                    "interpolate",
+                    [
+                        "linear",
+                        1
+                    ],
+                    [
+                        "zoom"
+                    ],
+                    10,
+                    2,
+                    15,
+                    4
+                ]
+            }
+        },
+        {
             "id": "boundary_3",
             "type": "line",
             "source": "openmaptiles",
@@ -4827,7 +4897,7 @@
                 ]
             ],
             "paint": {
-                "line-color": "hsl(0,0%,70%)",
+                "line-color": "hsl(0,0%,50%)",
                 "line-dasharray": [
                     1,
                     1
@@ -4842,9 +4912,9 @@
                         "zoom"
                     ],
                     7,
-                    1,
-                    11,
-                    2
+                    2,
+                    15,
+                    8
                 ]
             }
         },
@@ -6021,7 +6091,7 @@
             "type": "symbol",
             "source": "openmaptiles",
             "source-layer": "place",
-            "minzoom": 8,
+            "minzoom": 11.5,
             "maxzoom": 17,
             "filter": [
                 "match",
@@ -6103,7 +6173,7 @@
             "type": "symbol",
             "source": "openmaptiles",
             "source-layer": "place",
-            "minzoom": 9,
+            "minzoom": 9.5,
             "maxzoom": 16,
             "filter": [
                 "==",
@@ -6273,7 +6343,7 @@
             "type": "symbol",
             "source": "openmaptiles",
             "source-layer": "place",
-            "minzoom": 5,
+            "minzoom": 6,
             "maxzoom": 8,
             "filter": [
                 "==",
@@ -6306,12 +6376,16 @@
                         "coalesce",
                         [
                             "get",
-                            "name_en"
+                            "name:pl"
                         ],
                         [
                             "get",
                             "name"
-                        ]
+                        ],
+                        [
+                            "get",
+                            "name_en"
+                        ]                        
                     ]
                 ],
                 "text-font": [
@@ -6403,11 +6477,15 @@
                         "coalesce",
                         [
                             "get",
-                            "name_en"
+                            "name:pl"
                         ],
                         [
                             "get",
                             "name"
+                        ],
+                        [
+                            "get",
+                            "name_en"
                         ]
                     ]
                 ],
