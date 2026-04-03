@@ -651,7 +651,7 @@
         editedTerritoryMarkers = [];
     }
 
-    function selectTerritoryForEditing(territoryData) {
+    function selectTerritoryForEditing(territoryData, polygonIndex = 0) {
         removeEditingMarkers();
 
         if (editedTerritory) {
@@ -665,8 +665,8 @@
             return;
         } 
 
-        territoryData.coords.forEach((point, index) => {
-            editedTerritoryMarkers.push(createNodeMarker(point, index, territoryData));
+        territoryData.coords[polygonIndex].forEach((point, index) => {
+            editedTerritoryMarkers.push(createNodeMarker(point, index, territoryData, polygonIndex));
         });
 
         territoryData.listElement.classList.add('selected');
@@ -682,7 +682,7 @@
     }
 
 
-    function createNodeMarker(point, index, territoryData) {
+    function createNodeMarker(point, index, territoryData, polygonIndex) {
 
             let marker = new maplibregl.Marker({
                     draggable: true,
@@ -698,18 +698,18 @@
                     className: 'halfpoint-marker'
             })
                 // .setLngLat(getHalfpointPosition(territoryData.geojson.features[0].geometry.coordinates[0][index === 0 ? territoryData.geojson.features[0].geometry.coordinates[0].length - 2 : index - 1], point))
-                .setLngLat(getHalfpointPosition(territoryData.coords[index === 0 ? territoryData.coords.length - 1 : index - 1], point))
+                .setLngLat(getHalfpointPosition(territoryData.coords[polygonIndex][index === 0 ? territoryData.coords[polygonIndex].length - 1 : index - 1], point))
                 .addTo(map);
 
             let nodeMarker = {marker: marker, halfpoint: halfpoint, index: index};
 
             marker.on('drag', () => {
-                nodeDrag(nodeMarker, territoryData);
+                nodeDrag(nodeMarker, territoryData, polygonIndex);
             });
 
             marker.getElement().addEventListener('dblclick', (event) => {
                 event.stopPropagation();
-                nodeDblClick(nodeMarker.index, territoryData);
+                nodeDblClick(nodeMarker.index, territoryData, polygonIndex);
             });            
             
             marker.getElement().addEventListener('click', (event) => {
@@ -717,11 +717,11 @@
             });
 
             marker.on('dragend', () => {
-                nodeDragEnd(nodeMarker);    
+                nodeDragEnd(nodeMarker, territoryData, polygonIndex);    
             });
             
             halfpoint.once('dragstart', () => {
-                addNode(nodeMarker, territoryData);
+                addNode(nodeMarker, territoryData, polygonIndex);
             });
 
             return nodeMarker;
@@ -733,24 +733,27 @@
 
         territoryData.geojson = {
             'type': 'FeatureCollection',
-            'features': [
-                {
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'Polygon',
-                        'coordinates': [[...territoryData.coords, territoryData.coords[0]]]
+            'features': 
+            territoryData.coords.map((coords) => {
+                    return {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Polygon',
+                            'coordinates': [[...coords, coords[0]]]
+                        }
                     }
-                }
-            ]
+                })
+
+            
         };
-        // 'coordinates': territoryData.coords.map(polygon => [...polygon, polygon[0]])
+        // 'coordinates': [[...territoryData.coords, territoryData.coords[0]]]
     }
 
-    function addNode(node, territoryData) {
+    function addNode(node, territoryData, polygonIndex) {
         if (!editedTerritory) return;
 
-        let previousPoint = territoryData.coords[node.index === 0 ? territoryData.coords.length - 1 : node.index - 1];
-        let nextPoint = territoryData.coords[node.index];
+        let previousPoint = territoryData.coords[polygonIndex][node.index === 0 ? territoryData.coords[polygonIndex].length - 1 : node.index - 1];
+        let nextPoint = territoryData.coords[polygonIndex][node.index];
         let point = getHalfpointPosition(previousPoint, nextPoint);
         
         let halfpoint = new maplibregl.Marker({
@@ -766,16 +769,16 @@
         newnode.marker.removeClassName('halfpoint-marker');
 
         newnode.marker.on('drag', () => {
-            nodeDrag(newnode, territoryData);
+            nodeDrag(newnode, territoryData, polygonIndex);
         });
         
         newnode.marker.on('dragend', () => {
-            nodeDragEnd(newnode);
+            nodeDragEnd(newnode, territoryData, polygonIndex);
         });
         
         newnode.marker.getElement().addEventListener('dblclick', (event) => {
             event.stopPropagation();
-            nodeDblClick(newnode.index, territoryData);
+            nodeDblClick(newnode.index, territoryData, polygonIndex);
         });            
         
         newnode.marker.getElement().addEventListener('click', (event) => {
@@ -791,10 +794,10 @@
         .addTo(map);
         
         halfpoint.once('dragstart', () => {
-            addNode(newnode, territoryData);
+            addNode(newnode, territoryData, polygonIndex);
         });
         node.halfpoint.once('dragstart', () => {
-            addNode(node, territoryData);
+            addNode(node, territoryData, polygonIndex);
         });
         
         for (let i = node.index; i < editedTerritoryMarkers.length; i++) {
@@ -804,17 +807,17 @@
         recordChangeset([{
             id: editedTerritory.id,
             data: {
-                coords: Array.from(territoryData.coords)
+                coords: territoryData.coords.map((polygon) => Array.from(polygon))
             }
         }]);
-        territoryData.coords.splice(newnode.index, 0, point);
+        territoryData.coords[polygonIndex].splice(newnode.index, 0, point);
         editedTerritoryMarkers.splice(newnode.index, 0, newnode);
 
         refreshGeojson(territoryData);
         map.getSource(`territory-source-${territoryData.id}`).setData(territoryData.geojson);
     }
 
-    function nodeDblClick(index, territoryData) {
+    function nodeDblClick(index, territoryData, polygonIndex) {
         if (!editedTerritory) return;
         if (editedTerritoryMarkers.length <= 3) return;
 
@@ -824,12 +827,12 @@
         recordChangeset([{
             id: editedTerritory.id,
             data: {
-                coords: Array.from(territoryData.coords)
+                coords: territoryData.coords.map((polygon) => Array.from(polygon))
             }
         }]);
 
         editedTerritoryMarkers.splice(index, 1);
-        territoryData.coords.splice(index, 1);
+        territoryData.coords[polygonIndex].splice(index, 1);
 
         refreshGeojson(territoryData);
 
@@ -842,41 +845,44 @@
 
 
         // set halfpoint of next node
-        editedTerritoryMarkers[index % editedTerritoryMarkers.length].halfpoint.setLngLat(getHalfpointPosition(territoryData.coords[index === 0 ? territoryData.coords.length - 1 : index - 1], territoryData.coords[index]));
+        editedTerritoryMarkers[index % editedTerritoryMarkers.length].halfpoint.setLngLat(
+            getHalfpointPosition(territoryData.coords[polygonIndex][index === 0 ? territoryData.coords[polygonIndex].length - 1 : index - 1], 
+            index === territoryData.coords[polygonIndex].length ? territoryData.coords[polygonIndex][0] : territoryData.coords[polygonIndex][index])
+        );
     }
 
 
-    function nodeDrag(node, territoryData) {
+    function nodeDrag(node, territoryData, polygonIndex) {
         if (!editedTerritory) return;
         const lngLat = node.marker.getLngLat();
 
 
-        territoryData.geojson.features[0].geometry.coordinates[0][node.index] = [lngLat.lng, lngLat.lat];
+        territoryData.geojson.features[0].geometry.coordinates[polygonIndex][node.index] = [lngLat.lng, lngLat.lat];
         if (node.index === 0) {
-            territoryData.geojson.features[0].geometry.coordinates[0][territoryData.geojson.features[0].geometry.coordinates[0].length - 1] = [lngLat.lng, lngLat.lat];
+            territoryData.geojson.features[0].geometry.coordinates[polygonIndex][territoryData.geojson.features[0].geometry.coordinates[polygonIndex].length - 1] = [lngLat.lng, lngLat.lat];
         }
 
-        let previousPoint = node.index === 0 ? territoryData.geojson.features[0].geometry.coordinates[0][territoryData.geojson.features[0].geometry.coordinates[0].length - 2] : territoryData.geojson.features[0].geometry.coordinates[0][node.index - 1];
+        let previousPoint = node.index === 0 ? territoryData.geojson.features[0].geometry.coordinates[polygonIndex][territoryData.geojson.features[0].geometry.coordinates[polygonIndex].length - 2] : territoryData.geojson.features[0].geometry.coordinates[polygonIndex][node.index - 1];
         node.halfpoint.setLngLat(getHalfpointPosition(previousPoint, [lngLat.lng, lngLat.lat]));
         
-        let nextPoint = node.index === editedTerritoryMarkers.length - 1 ? territoryData.geojson.features[0].geometry.coordinates[0][0] : territoryData.geojson.features[0].geometry.coordinates[0][node.index + 1];
+        let nextPoint = node.index === editedTerritoryMarkers.length - 1 ? territoryData.geojson.features[0].geometry.coordinates[polygonIndex][0] : territoryData.geojson.features[0].geometry.coordinates[polygonIndex][node.index + 1];
         editedTerritoryMarkers[(node.index + 1) % editedTerritoryMarkers.length].halfpoint.setLngLat(getHalfpointPosition(nextPoint, [lngLat.lng, lngLat.lat]));
 
         map.getSource(`territory-source-${editedTerritory.id}`).setData(territoryData.geojson);
     }
 
-    function nodeDragEnd(node) {
-        let lastCoord = editedTerritory.coords[node.index];
+    function nodeDragEnd(node, territoryData, polygonIndex) {
+        let lastCoord = editedTerritory.coords[polygonIndex][node.index];
         const lngLat = node.marker.getLngLat();
 
         let changeset = [{
             id: editedTerritory.id,
             data: {
-                coords: Array.from(editedTerritory.coords)
+                coords: territoryData.coords.map((polygon) => Array.from(polygon))
             }
         }];
 
-        editedTerritory.coords[node.index] = [lngLat.lng, lngLat.lat];
+        editedTerritory.coords[polygonIndex][node.index] = [lngLat.lng, lngLat.lat];
 
         recordChangeset(changeset);
     }
@@ -967,7 +973,7 @@
         const newTerritoryData = {
             number: territories.length + 1,
             name: `Teren ${territories.length + 1}`,
-            coords: [[center.lng - size, center.lat], [center.lng + size, center.lat], [center.lng, center.lat + size]],
+            coords: [[[center.lng - size, center.lat], [center.lng + size, center.lat], [center.lng, center.lat + size]]],
             fill: document.getElementById("fill-input")?.value ?? "#000088",
             stroke: document.getElementById("stroke-input")?.value ?? "#000000",
             thickness: parseFloat(document.getElementById("thickness-input")?.value ?? 5),
