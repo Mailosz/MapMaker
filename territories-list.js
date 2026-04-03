@@ -30,10 +30,18 @@ class TerritoryListItem extends HTMLElement {
             this.dispatchEvent(new CustomEvent('delete', { detail: {} }));
         };
 
+        this.cardButton = document.createElement('button');
+        this.cardButton.textContent = 'Karta';
+        this.cardButton.onclick = (event) => {
+            event.stopPropagation();
+            this.dispatchEvent(new CustomEvent('card', { detail: {} }));
+        };
+
         this.moreMenu = document.createElement('div');
         this.moreMenu.popover = "auto";
+        this.moreMenu.appendChild(this.cardButton);
         this.moreMenu.appendChild(this.deleteButton);
-        this.moreMenu.style.positionArea = 'right span-all';
+        this.moreMenu.classList.add('more-menu');
         this.appendChild(this.moreMenu);
 
         this.moreButton = document.createElement('button');
