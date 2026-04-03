@@ -12,7 +12,8 @@ function changeFillColor(color) {
         }
     }]);
     editedTerritory.fill = color;
-    map.setPaintProperty(`${editedTerritory.id}-fill-layer`, 'fill-color', color);
+    refreshTerritoryGeojson(editedTerritory);
+    updateTerritoriesSource();
 }
 
 function changeStrokeColor(color) {
@@ -24,7 +25,8 @@ function changeStrokeColor(color) {
         }
     }]);
     editedTerritory.stroke = color;
-    map.setPaintProperty(`${editedTerritory.id}-stroke-layer`, 'line-color', color);
+    refreshTerritoryGeojson(editedTerritory);
+    updateTerritoriesSource();
 }
 
 function changeStrokeWidth(width) {
@@ -36,7 +38,8 @@ function changeStrokeWidth(width) {
         }
     }]);
     editedTerritory.thickness = parseFloat(width);
-    map.setPaintProperty(`${editedTerritory.id}-stroke-layer`, 'line-width', parseFloat(width));
+    refreshTerritoryGeojson(editedTerritory);
+    updateTerritoriesSource();
 }
 
 function changeOpacity(opacity) {
@@ -48,7 +51,8 @@ function changeOpacity(opacity) {
         }
     }]);
     editedTerritory.opacity = parseFloat(opacity);
-    map.setPaintProperty(`${editedTerritory.id}-fill-layer`, 'fill-opacity', parseFloat(opacity));
+    refreshTerritoryGeojson(editedTerritory);
+    updateTerritoriesSource();
 }
 
 function changeName(name) {

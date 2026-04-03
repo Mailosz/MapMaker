@@ -131,9 +131,6 @@ function updateAllTerritories() {
 function updateTerrritory(territoryData) {
     refreshTerritoryGeojson(territoryData);
     updateTerritoriesSource(territoryData);
-    map.setPaintProperty(`${territoryData.id}-stroke-layer`, 'line-color', territoryData.stroke);
-    map.setPaintProperty(`${territoryData.id}-stroke-layer`, 'line-width', parseFloat(territoryData.thickness));
-    map.setPaintProperty(`${territoryData.id}-fill-layer`, 'fill-opacity', parseFloat(territoryData.opacity));
     territoryData.listElement.setAttribute('label', `${territoryData.number} - ${territoryData.name}`);
     territoryData.listElement.setAttribute('label', `${territoryData.number} - ${territoryData.name}`);
     territoryData.listElement.setAttribute('label', `${territoryData.number} - ${territoryData.name}`);
@@ -240,6 +237,11 @@ function refreshTerritoryGeojson(territoryData) {
         "type": "MultiPolygon",
         "coordinates": [territoryData.coords.map((polygon) => [...polygon, polygon[0]])]
     }
+
+    territoryData.geojson.properties.fillColor = territoryData.fill;
+    territoryData.geojson.properties.strokeColor = territoryData.stroke;
+    territoryData.geojson.properties.thickness = territoryData.thickness;
+    territoryData.geojson.properties.fillOpacity = territoryData.opacity;
 
 }
 

@@ -37,18 +37,7 @@ let data = {
 let territoriesSource;
 let territoriesSourceGeojson = {
     'type': 'FeatureCollection',
-    'features':
-        [{
-                'type': 'Feature',
-                'geometry': {
-                    'type': 'MultiPolygon',
-                    'coordinates': [[[[21, 50], [22, 50], [22, 51], [21, 51], [21, 50]]]]
-                },
-                "properties": {
-                    "id": "none"
-                }
-            }
-        ]
+    'features': []
 
 
 }
