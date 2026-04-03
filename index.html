@@ -322,7 +322,7 @@
 
         let undoStack = [];
         let redoStack = [];
-        let territoryNodes = [];
+        let editedTerritoryMarkers = [];
         let editedTerritory = null;
         let territories = [];
         let savedOn = 0;
@@ -665,11 +665,11 @@
     }
 
     function removeEditingMarkers() {
-        territoryNodes.forEach(node => {
+        editedTerritoryMarkers.forEach(node => {
             node.marker.remove();
             node.halfpoint.remove();
         });
-        territoryNodes = [];
+        editedTerritoryMarkers = [];
     }
 
     function selectTerritoryForEditing(territoryData) {
@@ -687,7 +687,7 @@
         } 
 
         territoryData.coords.forEach((point, index) => {
-            createNode(point, index, territoryData.geojson, territoryNodes);
+            editedTerritoryMarkers.push(createNodeMarker(point, index, territoryData));
         });
 
         territoryData.listElement.classList.add('selected');
@@ -703,9 +703,8 @@
     }
 
 
-    function createNode(point, index, geojson, territoryNodes) {
+    function createNodeMarker(point, index, territoryData) {
 
-    
             let marker = new maplibregl.Marker({
                     draggable: true,
                     element: document.createElement('div'),
@@ -719,19 +718,19 @@
                     element: document.createElement('div'),
                     className: 'halfpoint-marker'
             })
-                .setLngLat(getHalfpointPosition(geojson.features[0].geometry.coordinates[0][index === 0 ? geojson.features[0].geometry.coordinates[0].length - 2 : index - 1], point))
+                // .setLngLat(getHalfpointPosition(territoryData.geojson.features[0].geometry.coordinates[0][index === 0 ? territoryData.geojson.features[0].geometry.coordinates[0].length - 2 : index - 1], point))
+                .setLngLat(getHalfpointPosition(territoryData.coords[index === 0 ? territoryData.coords.length - 1 : index - 1], point))
                 .addTo(map);
 
-            let node = {marker: marker, halfpoint: halfpoint, index: index};
-            territoryNodes.push(node);
+            let nodeMarker = {marker: marker, halfpoint: halfpoint, index: index};
 
             marker.on('drag', () => {
-                nodeDrag(node, geojson, territoryNodes);
+                nodeDrag(nodeMarker, territoryData);
             });
 
             marker.getElement().addEventListener('dblclick', (event) => {
                 event.stopPropagation();
-                nodeDblClick(node.index, geojson);
+                nodeDblClick(nodeMarker.index, territoryData);
             });            
             
             marker.getElement().addEventListener('click', (event) => {
@@ -739,21 +738,27 @@
             });
 
             marker.on('dragend', () => {
-                nodeDragEnd(node);    
+                nodeDragEnd(nodeMarker);    
             });
             
             halfpoint.once('dragstart', () => {
-                addNode(node, geojson, territoryNodes);
+                addNode(nodeMarker, territoryData);
             });
+
+            return nodeMarker;
     }
 
     function getHalfpointPosition(p1, p2) {return [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]}
 
-    function addNode(node, geojson, territoryNodes) {
+    function refreshGeojson(territoryData) {
+        territoryData.geojson.features[0].geometry.coordinates[0] = [...territoryData.coords, territoryData.coords[0]];
+    }
+
+    function addNode(node, territoryData) {
         if (!editedTerritory) return;
 
-        let previousPoint = geojson.features[0].geometry.coordinates[0][node.index === 0 ? geojson.features[0].geometry.coordinates[0].length - 1 : node.index - 1];
-        let nextPoint = geojson.features[0].geometry.coordinates[0][node.index];
+        let previousPoint = territoryData.coords[node.index === 0 ? territoryData.coords.length - 1 : node.index - 1];
+        let nextPoint = territoryData.coords[node.index];
         let point = getHalfpointPosition(previousPoint, nextPoint);
         
         let halfpoint = new maplibregl.Marker({
@@ -769,7 +774,7 @@
         newnode.marker.removeClassName('halfpoint-marker');
 
         newnode.marker.on('drag', () => {
-            nodeDrag(newnode, geojson, territoryNodes);
+            nodeDrag(newnode, territoryData);
         });
         
         newnode.marker.on('dragend', () => {
@@ -778,7 +783,7 @@
         
         newnode.marker.getElement().addEventListener('dblclick', (event) => {
             event.stopPropagation();
-            nodeDblClick(newnode.index, geojson);
+            nodeDblClick(newnode.index, territoryData);
         });            
         
         newnode.marker.getElement().addEventListener('click', (event) => {
@@ -794,14 +799,14 @@
         .addTo(map);
         
         halfpoint.once('dragstart', () => {
-            addNode(newnode, geojson, territoryNodes);
+            addNode(newnode, territoryData);
         });
         node.halfpoint.once('dragstart', () => {
-            addNode(node, geojson, territoryNodes);
+            addNode(node, territoryData);
         });
         
-        for (let i = node.index; i < territoryNodes.length; i++) {
-            territoryNodes[i].index++;
+        for (let i = node.index; i < editedTerritoryMarkers.length; i++) {
+            editedTerritoryMarkers[i].index++;
         }
         
         recordChangeset([{
@@ -811,18 +816,18 @@
             }
         }]);
         editedTerritory.coords.splice(newnode.index, 0, point);
-        territoryNodes.splice(newnode.index, 0, newnode);
+        editedTerritoryMarkers.splice(newnode.index, 0, newnode);
 
-        geojson.features[0].geometry.coordinates[0].splice(newnode.index, 0, point);
-        map.getSource(`territory-source-${editedTerritory.id}`).setData(geojson);
+        refreshGeojson(territoryData);
+        map.getSource(`territory-source-${editedTerritory.id}`).setData(territoryData.geojson);
     }
 
-    function nodeDblClick(index, geojson) {
+    function nodeDblClick(index, territoryData) {
         if (!editedTerritory) return;
-        if (territoryNodes.length <= 3) return;
+        if (editedTerritoryMarkers.length <= 3) return;
 
-        territoryNodes[index].marker.remove();
-        territoryNodes[index].halfpoint.remove();
+        editedTerritoryMarkers[index].marker.remove();
+        editedTerritoryMarkers[index].halfpoint.remove();
 
         recordChangeset([{
             id: editedTerritory.id,
@@ -831,45 +836,41 @@
             }
         }]);
 
-        territoryNodes.splice(index, 1);
+        editedTerritoryMarkers.splice(index, 1);
         editedTerritory.coords.splice(index, 1);
-        geojson.features[0].geometry.coordinates[0].splice(index, 1);
 
-        if (index === 0) {
-            geojson.features[0].geometry.coordinates[0][geojson.features[0].geometry.coordinates[0].length - 1] = geojson.features[0].geometry.coordinates[0][0];
+        refreshGeojson(territoryData);
+
+
+        for (let i = index; i < editedTerritoryMarkers.length; i++) {
+            editedTerritoryMarkers[i].index--;
         }
 
-
-        for (let i = index; i < territoryNodes.length; i++) {
-            territoryNodes[i].index--;
-        }
-
-        map.getSource(`territory-source-${editedTerritory.id}`).setData(geojson);
-
+        map.getSource(`territory-source-${editedTerritory.id}`).setData(territoryData.geojson);
 
 
         // set halfpoint of next node
-        territoryNodes[index % territoryNodes.length].halfpoint.setLngLat(getHalfpointPosition(geojson.features[0].geometry.coordinates[0][index === 0 ? geojson.features[0].geometry.coordinates[0].length - 1 : index - 1], geojson.features[0].geometry.coordinates[0][index]));
+        editedTerritoryMarkers[index % editedTerritoryMarkers.length].halfpoint.setLngLat(getHalfpointPosition(territoryData.coords[index === 0 ? territoryData.coords.length - 1 : index - 1], territoryData.coords[index]));
     }
 
 
-    function nodeDrag(node, geojson, territoryNodes) {
+    function nodeDrag(node, territoryData) {
         if (!editedTerritory) return;
         const lngLat = node.marker.getLngLat();
 
 
-        geojson.features[0].geometry.coordinates[0][node.index] = [lngLat.lng, lngLat.lat];
+        territoryData.geojson.features[0].geometry.coordinates[0][node.index] = [lngLat.lng, lngLat.lat];
         if (node.index === 0) {
-            geojson.features[0].geometry.coordinates[0][geojson.features[0].geometry.coordinates[0].length - 1] = [lngLat.lng, lngLat.lat];
+            territoryData.geojson.features[0].geometry.coordinates[0][territoryData.geojson.features[0].geometry.coordinates[0].length - 1] = [lngLat.lng, lngLat.lat];
         }
 
-        let previousPoint = node.index === 0 ? geojson.features[0].geometry.coordinates[0][geojson.features[0].geometry.coordinates[0].length - 2] : geojson.features[0].geometry.coordinates[0][node.index - 1];
+        let previousPoint = node.index === 0 ? territoryData.geojson.features[0].geometry.coordinates[0][territoryData.geojson.features[0].geometry.coordinates[0].length - 2] : territoryData.geojson.features[0].geometry.coordinates[0][node.index - 1];
         node.halfpoint.setLngLat(getHalfpointPosition(previousPoint, [lngLat.lng, lngLat.lat]));
         
-        let nextPoint = node.index === territoryNodes.length - 1 ? geojson.features[0].geometry.coordinates[0][0] : geojson.features[0].geometry.coordinates[0][node.index + 1];
-        territoryNodes[(node.index + 1) % territoryNodes.length].halfpoint.setLngLat(getHalfpointPosition(nextPoint, [lngLat.lng, lngLat.lat]));
+        let nextPoint = node.index === editedTerritoryMarkers.length - 1 ? territoryData.geojson.features[0].geometry.coordinates[0][0] : territoryData.geojson.features[0].geometry.coordinates[0][node.index + 1];
+        editedTerritoryMarkers[(node.index + 1) % editedTerritoryMarkers.length].halfpoint.setLngLat(getHalfpointPosition(nextPoint, [lngLat.lng, lngLat.lat]));
 
-        map.getSource(`territory-source-${editedTerritory.id}`).setData(geojson);
+        map.getSource(`territory-source-${editedTerritory.id}`).setData(territoryData.geojson);
     }
 
     function nodeDragEnd(node) {
