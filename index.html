@@ -592,31 +592,21 @@
 
         const id = crypto.randomUUID();
 
-        const geojson = {
-            'type': 'FeatureCollection',
-            'features': [
-                {
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'Polygon',
-                        'coordinates': [[...territoryData.coords, territoryData.coords[0]]]
-                    }
-                }
-            ]
-        };
         
         let newTerritory = {
             id: id, 
             number: territoryData.number, 
             name: territoryData.name, 
             coords: territoryData.coords, 
-            geojson: geojson, 
+            geojson: null, 
             fill: territoryData.fill, 
             stroke: territoryData.stroke, 
             thickness: territoryData.thickness, 
             opacity: territoryData.opacity,
             listElement: null
         };
+
+        refreshGeojson(newTerritory);
 
         createTerritoryVisuals(newTerritory);
 
@@ -633,18 +623,7 @@
     }
 
     function updateTerrritory(territoryData) {
-        territoryData.geojson = {
-            'type': 'FeatureCollection',
-            'features': [
-                {
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'Polygon',
-                        'coordinates': [[...territoryData.coords, territoryData.coords[0]]]
-                    }
-                }
-            ]
-        };
+        refreshGeojson(territoryData);
         map.getSource(`territory-source-${territoryData.id}`).setData(territoryData.geojson);
         map.setPaintProperty(`${territoryData.id}-stroke-layer`, 'line-color', territoryData.stroke);
         map.setPaintProperty(`${territoryData.id}-stroke-layer`, 'line-width', parseFloat(territoryData.thickness));
@@ -751,7 +730,20 @@
     function getHalfpointPosition(p1, p2) {return [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]}
 
     function refreshGeojson(territoryData) {
-        territoryData.geojson.features[0].geometry.coordinates[0] = [...territoryData.coords, territoryData.coords[0]];
+
+        territoryData.geojson = {
+            'type': 'FeatureCollection',
+            'features': [
+                {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Polygon',
+                        'coordinates': [[...territoryData.coords, territoryData.coords[0]]]
+                    }
+                }
+            ]
+        };
+        // 'coordinates': territoryData.coords.map(polygon => [...polygon, polygon[0]])
     }
 
     function addNode(node, territoryData) {
@@ -812,14 +804,14 @@
         recordChangeset([{
             id: editedTerritory.id,
             data: {
-                coords: Array.from(editedTerritory.coords)
+                coords: Array.from(territoryData.coords)
             }
         }]);
-        editedTerritory.coords.splice(newnode.index, 0, point);
+        territoryData.coords.splice(newnode.index, 0, point);
         editedTerritoryMarkers.splice(newnode.index, 0, newnode);
 
         refreshGeojson(territoryData);
-        map.getSource(`territory-source-${editedTerritory.id}`).setData(territoryData.geojson);
+        map.getSource(`territory-source-${territoryData.id}`).setData(territoryData.geojson);
     }
 
     function nodeDblClick(index, territoryData) {
@@ -832,12 +824,12 @@
         recordChangeset([{
             id: editedTerritory.id,
             data: {
-                coords: Array.from(editedTerritory.coords)
+                coords: Array.from(territoryData.coords)
             }
         }]);
 
         editedTerritoryMarkers.splice(index, 1);
-        editedTerritory.coords.splice(index, 1);
+        territoryData.coords.splice(index, 1);
 
         refreshGeojson(territoryData);
 
