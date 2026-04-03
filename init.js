@@ -21,6 +21,38 @@ let data = {
     ],
 }
 
+// let territoriesSourceGeojson = {
+//     'type': 'FeatureCollection',
+//         'features':
+//     territoryData.coords.map((coords) => {
+//         return {
+//             'type': 'Feature',
+//             'geometry': {
+//                 'type': 'Polygon',
+//                 'coordinates': [[...coords, coords[0]]]
+//             }
+//         }
+//     })
+// }
+let territoriesSource;
+let territoriesSourceGeojson = {
+    'type': 'FeatureCollection',
+    'features':
+        [{
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'MultiPolygon',
+                    'coordinates': [[[[21, 50], [22, 50], [22, 51], [21, 51], [21, 50]]]]
+                },
+                "properties": {
+                    "id": "none"
+                }
+            }
+        ]
+
+
+}
+
 // Initialize the map       
 let map = new maplibregl.Map({
     container: 'map-container',
@@ -29,6 +61,11 @@ let map = new maplibregl.Map({
     zoom: 9 // starting zoom
 });
 const canvas = map.getCanvasContainer();
+
+// map.addSource('territories-source', {
+//     'type': 'geojson',
+//     'data': territoriesSourceGeojson
+// });
 
 map.addControl(new maplibregl.NavigationControl({
     visualizePitch: true,
@@ -52,6 +89,10 @@ map.doubleClickZoom.disable();
 map.on('load', () => {
     // Add a source and layer displaying a point which will be dragged around.
 
+    territoriesSource = map.getSource(`territories-source`);
+
+    territoriesSource.setData(territoriesSourceGeojson);
+
     loadData(data);
     if (territories.length > 0) {
         selectTerritoryForEditing(territories[0]);
@@ -61,11 +102,16 @@ map.on('load', () => {
 
 });
 
+
+function updateTerritoriesSource() {
+    territoriesSource.setData(territoriesSourceGeojson);
+}
+
 map.on('click', (e) => {
     const features = map.queryRenderedFeatures(e.point);
 
-    if (features.length > 0 && features[0].source.startsWith('territory-source-')) {
-        const territoryId = features[0].source.substring('territory-source-'.length);
+    if (features.length > 0 && features[0].source == 'territories-source') {
+        const territoryId = features[0].properties.id;
         const territoryData = territories.find(t => t.id === territoryId);
         selectTerritoryForEditing(territoryData);
     } else {

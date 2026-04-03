@@ -125,10 +125,10 @@ function changeProject(data) {
         selectTerritoryForEditing(territories[0]);
 
         map.fitBounds(territories.reduce((bounds, territory) => {
-            return bounds.extend(territory.geojson.features[0].geometry.coordinates[0].reduce((bounds, coord) => {
+            return bounds.extend(territory.coords[0].reduce((bounds, coord) => {
                 return bounds.extend(coord);
-            }, new maplibregl.LngLatBounds(territory.geojson.features[0].geometry.coordinates[0][0], territory.geojson.features[0].geometry.coordinates[0][0])));
-        }, new maplibregl.LngLatBounds(territories[0].geojson.features[0].geometry.coordinates[0][0], territories[0].geojson.features[0].geometry.coordinates[0][0])),
+            }, new maplibregl.LngLatBounds(territory.coords[0][0], territory.coords[0][0])));
+        }, new maplibregl.LngLatBounds(territories[0].coords[0][0], territories[0].coords[0][0])),
             {
                 padding: 100
             });

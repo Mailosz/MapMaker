@@ -10,9 +10,11 @@ document.getElementById("map-container").addEventListener('touchmove', e => e.pr
 
 
 function deleteTerritoryVisuals(territory) {
-    map.removeLayer(`${territory.id}-fill-layer`);
-    map.removeLayer(`${territory.id}-stroke-layer`);
-    map.removeSource(`territory-source-${territory.id}`);
+    //remove territory from source
+    territoriesSourceGeojson.features.splice(territoriesSourceGeojson.features.findIndex(feature => feature.properties.id === territory.id), 1);
+
+    updateTerritoriesSource();
+
     territory.listElement.remove();
 }
 
@@ -30,33 +32,8 @@ function deleteTerritory(territory) {
 
 function createTerritoryVisuals(territory) {
 
-
-    map.addSource(`territory-source-${territory.id}`, {
-        'type': 'geojson',
-        'data': territory.geojson
-    });
-
-    map.addLayer({
-        'id': `${territory.id}-fill-layer`,
-        'type': 'fill',
-        'source': `territory-source-${territory.id}`,
-        'layout': {},
-        'paint': {
-            'fill-color': territory.fill,
-            'fill-opacity': territory.opacity,
-        }
-    });
-
-    map.addLayer({
-        'id': `${territory.id}-stroke-layer`,
-        'type': 'line',
-        'source': `territory-source-${territory.id}`,
-        'layout': {},
-        'paint': {
-            'line-color': territory.stroke,
-            'line-width': territory.thickness,
-        }
-    });
+    //insert geojson into source
+    territoriesSourceGeojson.features.push(territory.geojson);
 
     if (territory.listElement) {
         territory.listElement.remove();
@@ -67,9 +44,9 @@ function createTerritoryVisuals(territory) {
         selectTerritoryForEditing(territories.find(t => t.id === territory.id));
     };
     listElement.ondblclick = () => {
-        map.fitBounds(territory.geojson.features[0].geometry.coordinates[0].reduce((bounds, coord) => {
+        map.fitBounds(territory.coords[0].reduce((bounds, coord) => {
             return bounds.extend(coord);
-        }, new maplibregl.LngLatBounds(territory.geojson.features[0].geometry.coordinates[0][0], territory.geojson.features[0].geometry.coordinates[0][0])), {
+        }, new maplibregl.LngLatBounds(territory.coords[0][0], territory.coords[0][0])), {
             padding: 100
         });
     };
@@ -89,9 +66,6 @@ function createTerritoryVisuals(territory) {
         }
     });
     listElement.addEventListener('delete', () => {
-        if (!window.confirm(`Czy na pewno chcesz usunąć teren ${territory.number} - ${territory.name}?`)) {
-            return;
-        }
         if (editedTerritory && editedTerritory.id === territory.id) {
             selectTerritoryForEditing(null);
         }
@@ -124,15 +98,21 @@ function loadTerritory(territoryData) {
         number: territoryData.number,
         name: territoryData.name,
         coords: territoryData.coords,
-        geojson: null,
+        geojson: {
+            "type": "Feature",
+            "geometry": {
+
+            },
+            "properties": {
+                "id": id
+            }
+        },
         fill: territoryData.fill,
         stroke: territoryData.stroke,
         thickness: territoryData.thickness,
         opacity: territoryData.opacity,
         listElement: null
     };
-
-    refreshGeojson(newTerritory);
 
     createTerritoryVisuals(newTerritory);
 
@@ -149,8 +129,8 @@ function updateAllTerritories() {
 }
 
 function updateTerrritory(territoryData) {
-    refreshGeojson(territoryData);
-    map.getSource(`territory-source-${territoryData.id}`).setData(territoryData.geojson);
+    refreshTerritoryGeojson(territoryData);
+    updateTerritoriesSource(territoryData);
     map.setPaintProperty(`${territoryData.id}-stroke-layer`, 'line-color', territoryData.stroke);
     map.setPaintProperty(`${territoryData.id}-stroke-layer`, 'line-width', parseFloat(territoryData.thickness));
     map.setPaintProperty(`${territoryData.id}-fill-layer`, 'fill-opacity', parseFloat(territoryData.opacity));
@@ -223,7 +203,6 @@ function createNodeMarker(point, index, territoryData, polygonIndex) {
         element: document.createElement('div'),
         className: 'halfpoint-marker'
     })
-        // .setLngLat(getHalfpointPosition(territoryData.geojson.features[0].geometry.coordinates[0][index === 0 ? territoryData.geojson.features[0].geometry.coordinates[0].length - 2 : index - 1], point))
         .setLngLat(getHalfpointPosition(territoryData.coords[polygonIndex][index === 0 ? territoryData.coords[polygonIndex].length - 1 : index - 1], point))
         .addTo(map);
 
@@ -255,24 +234,13 @@ function createNodeMarker(point, index, territoryData, polygonIndex) {
 
 function getHalfpointPosition(p1, p2) { return [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2] }
 
-function refreshGeojson(territoryData) {
+function refreshTerritoryGeojson(territoryData) {
 
-    territoryData.geojson = {
-        'type': 'FeatureCollection',
-        'features':
-            territoryData.coords.map((coords) => {
-                return {
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'Polygon',
-                        'coordinates': [[...coords, coords[0]]]
-                    }
-                }
-            })
+    territoryData.geojson.geometry = {
+        "type": "MultiPolygon",
+        "coordinates": [territoryData.coords.map((polygon) => [...polygon, polygon[0]])]
+    }
 
-
-    };
-    // 'coordinates': [[...territoryData.coords, territoryData.coords[0]]]
 }
 
 function addNode(node, territoryData, polygonIndex) {
@@ -293,6 +261,10 @@ function addNode(node, territoryData, polygonIndex) {
     let newnode = { marker: node.halfpoint, halfpoint: halfpoint, index: node.index };
     newnode.marker.addClassName('point-marker');
     newnode.marker.removeClassName('halfpoint-marker');
+
+    newnode.marker.on('dragstart', () => {
+        nodeDragStart(newnode, territoryData, polygonIndex);
+    });
 
     newnode.marker.on('drag', () => {
         nodeDrag(newnode, territoryData, polygonIndex);
@@ -339,8 +311,22 @@ function addNode(node, territoryData, polygonIndex) {
     territoryData.coords[polygonIndex].splice(newnode.index, 0, point);
     editedTerritoryMarkers.splice(newnode.index, 0, newnode);
 
-    refreshGeojson(territoryData);
-    map.getSource(`territory-source-${territoryData.id}`).setData(territoryData.geojson);
+    refreshTerritoryGeojson(territoryData);
+}
+
+let beforeCoords = null
+function nodeDragStart(nodeMarker, territoryData, polygonIndex) {
+    if (!editedTerritory) return;
+
+    let changeset = [{
+        id: editedTerritory.id,
+        data: {
+            coords: territoryData.coords.map((polygon) => Array.from(polygon))
+        }
+    }];
+
+    recordChangeset(changeset);
+
 }
 
 function nodeDblClick(index, territoryData, polygonIndex) {
@@ -360,14 +346,15 @@ function nodeDblClick(index, territoryData, polygonIndex) {
     editedTerritoryMarkers.splice(index, 1);
     territoryData.coords[polygonIndex].splice(index, 1);
 
-    refreshGeojson(territoryData);
+    refreshTerritoryGeojson(territoryData);
 
 
     for (let i = index; i < editedTerritoryMarkers.length; i++) {
         editedTerritoryMarkers[i].index--;
     }
 
-    map.getSource(`territory-source-${editedTerritory.id}`).setData(territoryData.geojson);
+    refreshTerritoryGeojson(territoryData);
+    updateTerritoriesSource(territoryData);
 
 
     // set halfpoint of next node
@@ -382,35 +369,27 @@ function nodeDrag(node, territoryData, polygonIndex) {
     if (!editedTerritory) return;
     const lngLat = node.marker.getLngLat();
 
+    editedTerritory.coords[polygonIndex][node.index] = [lngLat.lng, lngLat.lat];
 
-    territoryData.geojson.features[0].geometry.coordinates[polygonIndex][node.index] = [lngLat.lng, lngLat.lat];
-    if (node.index === 0) {
-        territoryData.geojson.features[0].geometry.coordinates[polygonIndex][territoryData.geojson.features[0].geometry.coordinates[polygonIndex].length - 1] = [lngLat.lng, lngLat.lat];
-    }
-
-    let previousPoint = node.index === 0 ? territoryData.geojson.features[0].geometry.coordinates[polygonIndex][territoryData.geojson.features[0].geometry.coordinates[polygonIndex].length - 2] : territoryData.geojson.features[0].geometry.coordinates[polygonIndex][node.index - 1];
+    let previousPoint = node.index === 0 ? editedTerritory.coords[polygonIndex][editedTerritory.coords[polygonIndex].length - 1] : editedTerritory.coords[polygonIndex][node.index - 1];
     node.halfpoint.setLngLat(getHalfpointPosition(previousPoint, [lngLat.lng, lngLat.lat]));
 
-    let nextPoint = node.index === editedTerritoryMarkers.length - 1 ? territoryData.geojson.features[0].geometry.coordinates[polygonIndex][0] : territoryData.geojson.features[0].geometry.coordinates[polygonIndex][node.index + 1];
+    let nextPoint = node.index >= editedTerritoryMarkers.length - 1 ? editedTerritory.coords[polygonIndex][0] : editedTerritory.coords[polygonIndex][node.index + 1];
     editedTerritoryMarkers[(node.index + 1) % editedTerritoryMarkers.length].halfpoint.setLngLat(getHalfpointPosition(nextPoint, [lngLat.lng, lngLat.lat]));
 
-    map.getSource(`territory-source-${editedTerritory.id}`).setData(territoryData.geojson);
+    refreshTerritoryGeojson(territoryData);
+    updateTerritoriesSource(territoryData);
 }
 
 function nodeDragEnd(node, territoryData, polygonIndex) {
     let lastCoord = editedTerritory.coords[polygonIndex][node.index];
     const lngLat = node.marker.getLngLat();
 
-    let changeset = [{
-        id: editedTerritory.id,
-        data: {
-            coords: territoryData.coords.map((polygon) => Array.from(polygon))
-        }
-    }];
+
 
     editedTerritory.coords[polygonIndex][node.index] = [lngLat.lng, lngLat.lat];
 
-    recordChangeset(changeset);
+    
 }
 
 
@@ -496,7 +475,7 @@ function commitChangeset(changeset) {
                     data: previousData
                 });
             }
-        } else { // delete territory
+        } else { // deleted territory
             let deletedTerritory = change.data;
             territories.splice(change.index, 0, deletedTerritory);
             createTerritoryVisuals(deletedTerritory);
