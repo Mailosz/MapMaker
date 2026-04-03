@@ -249,6 +249,26 @@
         .controls-div>button {
             font-size: large;
         }
+
+        [popover] {
+            inset: auto;
+            margin: 0;
+            border: 1px solid #888;
+            border-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #save-popover {
+            position-area: top;
+        }
+
+        #draft-popover {    
+            inset: 0;
+            margin: auto;
+            padding: 8px; 
+            max-width: 500px; 
+            text-align: center;
+        }
     </style>
 </head>
 <body class="edit-mode">
@@ -270,7 +290,7 @@
             </form>
         </details>
     </div>
-    <div popover="auto" class="overlay" id="draft-popover" style="padding: 8px; max-width: 500px; text-align: center;">
+    <div popover="auto" class="overlay" id="draft-popover">
         <p>Znaleziono wersję roboczą. Wybierz aby kontynuować pracę:</p>
         <p>Uwaga: poniższe projekty mogą zostać usunięte w każdej chwili. Zapisz je aby nie stracić swojej pracy.</p>
         <div id="draft-list"></div>

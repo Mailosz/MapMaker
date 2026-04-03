@@ -24,12 +24,22 @@ class TerritoryListItem extends HTMLElement {
         this.appendChild(this.label);
 
         this.deleteButton = document.createElement('button');
-        this.deleteButton.textContent = 'X';
+        this.deleteButton.textContent = 'Usuń';
         this.deleteButton.onclick = (event) => {
             event.stopPropagation();
             this.dispatchEvent(new CustomEvent('delete', { detail: {} }));
         };
-        this.appendChild(this.deleteButton);
+
+        this.moreMenu = document.createElement('div');
+        this.moreMenu.popover = "auto";
+        this.moreMenu.appendChild(this.deleteButton);
+        this.moreMenu.style.positionArea = 'right span-all';
+        this.appendChild(this.moreMenu);
+
+        this.moreButton = document.createElement('button');
+        this.moreButton.textContent = '⋮';
+        this.moreButton.popoverTargetElement = this.moreMenu;
+        this.appendChild(this.moreButton);
     }
 
     disconnectedCallback() {
