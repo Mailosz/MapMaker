@@ -859,32 +859,9 @@
                     15.5,
                     "#f2eae2",
                     16,
-                    "#dfdbd7"
-                ]
-            }
-        },
-        {
-            "id": "building-top",
-            "type": "fill",
-            "source": "openmaptiles",
-            "source-layer": "building",
-            "paint": {
-                "fill-color": "#f2eae2",
-                "fill-opacity": [
-                    "interpolate",
-                    [
-                        "linear"
-                    ],
-                    [
-                        "zoom"
-                    ],
-                    13,
-                    0,
-                    16,
-                    1
+                    "#efe4d7"
                 ],
-                "fill-outline-color": "#dfdbd7",
-                "fill-translate": [
+                "fill-outline-color": [
                     "interpolate",
                     [
                         "linear"
@@ -892,22 +869,10 @@
                     [
                         "zoom"
                     ],
-                    14,
-                    [
-                        "literal",
-                        [
-                            0,
-                            0
-                        ]
-                    ],
+                    15.5,
+                    "#bfbdba",
                     16,
-                    [
-                        "literal",
-                        [
-                            -2,
-                            -2
-                        ]
-                    ]
+                    "#afadaa"
                 ]
             }
         },
@@ -935,6 +900,24 @@
                 "symbol-z-order": "auto",
                 "text-allow-overlap": true,
                 "text-ignore-placement": true
+            },
+            "paint": {
+                "text-color": [
+                    "interpolate",
+                    [
+                        "linear"
+                    ],
+                    [
+                        "zoom"
+                    ],
+                    15,
+                    "#888888",
+                    15.5,
+                    "#333333"
+                ],
+                "text-halo-blur": 0.5,
+                "text-halo-color": "#ffffff",
+                "text-halo-width": 1
             },
             "minzoom": 15,
             "source-layer": "housenumber"
