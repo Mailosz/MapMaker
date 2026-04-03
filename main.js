@@ -436,14 +436,14 @@ function recordChangeset(changeset) {
 function performUndo() {
     if (undoStack.length === 0) return;
     const changeset = undoStack.pop();
-    console.log("UNDO", changeset);
+    // console.log("UNDO", changeset);
     redoStack.push(commitChangeset(changeset));
 }
 
 function performRedo() {
     if (redoStack.length === 0) return;
     const changeset = redoStack.pop();
-    console.log("REDO", changeset);
+    // console.log("REDO", changeset);
     undoStack.push(commitChangeset(changeset));
 }
 

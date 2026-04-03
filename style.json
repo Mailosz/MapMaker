@@ -884,7 +884,7 @@
             }
         },
         {
-            "id": "building_number",
+            "id": "building-number",
             "type": "symbol",
             "source": "openmaptiles",
             "layout": {
@@ -5151,6 +5151,38 @@
             }
         },
         {
+            "id": "territories-fill-layer",
+            "type": "fill",
+            "source": "territories-source",
+            "layout": {},
+            "paint": {
+                "fill-color": [
+                    "get",
+                    "fillColor"
+                ],
+                "fill-opacity": [
+                    "get",
+                    "fillOpacity"
+                ]
+            }
+        },
+        {
+            "id": "territories-stroke-layer",
+            "type": "line",
+            "source": "territories-source",
+            "layout": {},
+            "paint": {
+                "line-width": [
+                    "get",
+                    "thickness"
+                ],
+                "line-color": [
+                    "get",
+                    "strokeColor"
+                ]
+            }
+        },
+        {
             "id": "waterway_line_label",
             "type": "symbol",
             "source": "openmaptiles",
@@ -5532,7 +5564,7 @@
             }
         },
         {
-            "id": "highway-name-path",
+            "id": "road-name-path",
             "type": "symbol",
             "source": "openmaptiles",
             "source-layer": "transportation_name",
@@ -5602,11 +5634,11 @@
             }
         },
         {
-            "id": "highway-name-minor",
+            "id": "road-name-minor",
             "type": "symbol",
             "source": "openmaptiles",
             "source-layer": "transportation_name",
-            "minzoom": 15,
+            "minzoom": 14,
             "filter": [
                 "all",
                 [
@@ -5675,29 +5707,31 @@
                 "text-size": [
                     "interpolate",
                     [
-                        "linear"
+                        "exponential",
+                        1.2
                     ],
                     [
                         "zoom"
                     ],
                     13,
-                    12,
-                    14,
-                    13
+                    10,
+                    17,
+                    15
                 ]
             },
             "paint": {
                 "text-color": "#666",
                 "text-halo-blur": 0.5,
+                "text-halo-color": "#ffffff",
                 "text-halo-width": 1
             }
         },
         {
-            "id": "highway-name-major",
+            "id": "road-name-major",
             "type": "symbol",
             "source": "openmaptiles",
             "source-layer": "transportation_name",
-            "minzoom": 12.2,
+            "minzoom": 12,
             "filter": [
                 "match",
                 [
@@ -5752,21 +5786,23 @@
                 "text-size": [
                     "interpolate",
                     [
-                        "linear"
+                        "exponential",
+                        1.2
                     ],
                     [
                         "zoom"
                     ],
-                    13,
                     12,
-                    14,
-                    13
+                    10,
+                    17,
+                    18
                 ]
             },
             "paint": {
-                "text-color": "#666",
+                "text-color": "#333",
                 "text-halo-blur": 0.5,
-                "text-halo-width": 1
+                "text-halo-color": "#ffffff",
+                "text-halo-width": 2
             }
         },
         {
@@ -6854,38 +6890,6 @@
                 "text-halo-blur": 1,
                 "text-halo-color": "#fff",
                 "text-halo-width": 1
-            }
-        },
-        {
-        "id": "territories-fill-layer",
-        "type": "fill",
-        "source": "territories-source",
-        "layout": {},
-        "paint": {
-            "fill-color": [
-                "get",
-                "fillColor"
-            ],
-            "fill-opacity": [
-                "get",
-                "fillOpacity"
-            ]
-            }
-        },
-        {
-        "id": "territories-stroke-layer",
-        "type": "line",
-        "source": "territories-source",
-        "layout": {},
-        "paint": {
-            "line-width": [
-                "get",
-                "thickness"
-             ],
-             "line-color": [
-                "get",
-                "strokeColor"
-             ]
             }
         }
     ]
