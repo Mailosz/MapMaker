@@ -1,3 +1,16 @@
+function loadData(data) {
+
+    setProjectName(data.name);
+
+    data.groups.forEach(group => {
+        group.territories.forEach(territory => {
+            const newTerritory = loadTerritory(territory);
+            territories.push(newTerritory);
+        });
+    });
+
+}
+
 function findDrafts() {
     drafts = localStorage.getItem('drafts');
 

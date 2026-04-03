@@ -91,3 +91,7 @@ function setProjectName(name) {
 }
 
 
+function closePopover(el) {
+    const popover = el.closest('[popover]');
+    popover.hidePopover();
+}
