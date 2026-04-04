@@ -232,3 +232,64 @@ function getTerritoryPitch(territory) {
     }
     return 0;
 }
+
+
+function print() {
+
+    let printDiv = document.createElement('div');
+    printDiv.classList.add('print-div');
+    document.body.appendChild(printDiv);
+
+    let printIframe = document.createElement('iframe');
+    printIframe.classList.add('print-iframe');
+    printDiv.appendChild(printIframe);
+
+    let buttonsContainer = document.createElement('div');
+    buttonsContainer.classList.add('buttons-container');
+    printDiv.appendChild(buttonsContainer);
+
+    let closeButton = document.createElement('button');
+    closeButton.classList.add('close-button');
+    closeButton.textContent = 'X';
+    closeButton.onclick = () => printDiv.remove();
+    buttonsContainer.appendChild(closeButton);
+
+    let printButton = document.createElement('button');
+    printButton.classList.add('save-button');
+    printButton.textContent = 'Drukuj';
+    printButton.onclick = () => printIframe.contentWindow.print();
+    buttonsContainer.appendChild(printButton);
+
+
+
+
+    printIframe.onload = () => {
+        printIframe.contentWindow.maplibregl = maplibregl; // Make maplibregl available in the iframe    
+        
+        const script = printIframe.contentDocument.createElement("script");
+        script.type = "module";
+        script.src = "./territory-card.js";
+        printIframe.contentDocument.head.appendChild(script);
+
+        const link = printIframe.contentDocument.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "./print.css";
+        printIframe.contentDocument.head.appendChild(link);
+
+        for (let i = 0; i < territories.length && i < 4; i++) {
+            let territory = territories[i];
+            let card = printIframe.contentDocument.createElement('territory-card');
+            card.setAttribute('territory-id', territory.id);
+            card.setAttribute('territory-name', territory.number);
+            card.setAttribute('description', territory.name);
+            card.setAttribute('geojson', JSON.stringify([territory.geojson]));
+            card.setAttribute('center', JSON.stringify(getTeritoryCenter(territory)));
+            card.setAttribute('zoom', JSON.stringify(getTerritoryZoom(territory)));
+            card.setAttribute('bearing', JSON.stringify(getTerritoryBearing(territory)));
+            card.setAttribute('pitch', JSON.stringify(getTerritoryPitch(territory)));
+            printIframe.contentDocument.body.appendChild(card);
+            card.setAttribute('card-src', 'card.html');
+        }
+    }
+
+}

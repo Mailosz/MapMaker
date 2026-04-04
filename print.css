@@ -1,0 +1,24 @@
+html {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+}
+
+body {
+    width: 297mm;
+    height: 210mm;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    place-items: center;
+    gap: 0;
+}
+
+@media print {
+    @page {
+        size: landscape;
+    }
+}

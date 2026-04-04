@@ -83,6 +83,10 @@
             padding: 0 0.25em;
         }
 
+        hr {
+            width: calc(100% - 10px);
+        }
+
         #draft-list {
             display: flex; 
             flex-direction: column;
@@ -142,7 +146,7 @@
 
         }
 
-        .territory-dialog .buttons-container {
+        .buttons-container {
             position: absolute;
             top: 2px;
             right: 2px;
@@ -160,6 +164,29 @@
         .save-button {
             background-color: #33cc33;
             line-height: 1.2;
+        }
+
+        .print-iframe {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            z-index: 9999;
+            background: white;
+        }
+
+        .print-div {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: white;
+        }
+
+        .print-div .buttons-container {
+            z-index: 10000;
         }
     </style>
 </head>
@@ -196,6 +223,8 @@
                 <hr>
                 <button onclick="save();closePopover(this)">Zapisz w pliku</button>
                 <button onclick="load();closePopover(this)">Otwórz z pliku</button>
+                <hr>
+                <button onclick="print();closePopover(this)">Drukuj</button>
                 <hr>
                 <details>
                     <summary>Pokazuj:</summary>
