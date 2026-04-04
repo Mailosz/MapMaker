@@ -162,8 +162,8 @@ function openCardForTerritory(territory) {
     dialog.onclose = () => { dialog.remove(); }
 
     let card = document.createElement('territory-card');
-    card.setAttribute('territoryId', territory.id);
-    card.setAttribute('title', territory.number);
+    card.setAttribute('territory-id', territory.id);
+    card.setAttribute('territory-name', territory.number);
     card.setAttribute('description', territory.name);
     card.setAttribute('geojson', JSON.stringify([territory.geojson]));
     card.setAttribute('center', JSON.stringify(getTeritoryCenter(territory)));
@@ -171,6 +171,7 @@ function openCardForTerritory(territory) {
     card.setAttribute('bearing', JSON.stringify(getTerritoryBearing(territory)));
     card.setAttribute('pitch', JSON.stringify(getTerritoryPitch(territory)));
     dialog.appendChild(card);
+    card.setAttribute('card-src', 'card.html');
 
     card.addEventListener('view-change', () => {
         let saveButton = document.createElement('button');

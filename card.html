@@ -1,0 +1,89 @@
+<style>
+    #container {
+        display: block;
+        position: relative;
+        width: 14cm;
+        height: 9.7cm;
+    }
+
+    #title {
+        font-size: 0.5cm;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    #header {
+        position: absolute;
+        left: 0.1cm;
+        top: 0.1cm;
+        right: 0.1cm;
+        height: 1.9cm;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: stretch;
+        background: white;
+        overflow: hidden;
+    }
+    
+    #details {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1cm;
+    }
+
+    #description {
+        text-overflow: ellipsis;
+        line-clamp: 2;
+        font-size: 0.4cm;
+        line-clamp: 3;
+    }   
+    
+    .overflowing #description {
+        font-size: smaller;
+    }
+
+    #name {
+        line-clamp: 2;
+        font-size: 0.6cm;
+    }   
+
+    #map-container {
+        position: absolute;
+        left: 0.1cm;
+        top: 2cm; 
+        right: 0.1cm;
+        bottom: 1cm;
+        background-color: antiquewhite;
+    }
+
+
+    .maplibregl-ctrl-attrib {
+        display: none;
+    }
+
+    #footer {
+        position: absolute;
+        left: 0.1cm;
+        right: 0.1cm;
+        bottom: 0.1cm;
+        height: 0.8cm;
+        font-size: 0.3cm;
+    }
+</style>
+<div id="container">
+    <div id="header">
+        <div id="title">Karta terenu</div>
+        <div id="details">
+            <div id="description">{{description}}</div>
+            <div id="name">{{name}}</div>
+        </div>
+    </div>
+    <div id="map-container">
+    </div>
+    <div id="footer">
+        <span>Prosimy o przechowywanie tej karty w oprawce foliowej. Nie należy jej brudzić, zaginać ani rysować na niej. Za każdym razem, gdy teren jest opracowany, prosimy poinformować o tym brata, który prowadzi kartotekę terenów.</span>
+    </div>
+</div>

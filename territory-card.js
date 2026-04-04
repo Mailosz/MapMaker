@@ -54,22 +54,37 @@ class OxCustomElementBase extends HTMLElement {
 }
 
 let style = /*css*/`
+    :host {
+        display: block;
+        width: 14cm;
+        height: 9.7cm;
+    }
+
     #container {
-        display: grid;
-        grid-template-rows: auto 4cm auto;
-        justify-content: stretch;
-        align-items: stretch;
-        width: 10cm;
-        height: 6cm;
+        display: block;
+        width: 14cm;
+        height: 9.7cm;
+    }
+
+    #header {
+        position: absolute;
+        left: 0.1cm;
+        top: 0.1cm;
+        right: 0.1cm;
+        height: 2cm;
     }
 
     #map-container {
-
+        position: absolute;
+        left: 0.1cm;
+        top: 2.5cm; 
+        right: 0.1cm;
+        bottom: 1cm;
     }
 
     #map {
-        height: 4cm;
-        width: 10cm;
+        height: 8cm;
+        width: 14cm;
     }
 
 
@@ -78,13 +93,18 @@ let style = /*css*/`
     }
 
     #footer {
+        position: absolute;
+        left: 0.1cm;
+        right: 0.1cm;
+        bottom: 0.1cm;
+        height: 0.8cm;
         font-size: 10px;
     }
     `;
     
 class TerritoryCard extends OxCustomElementBase {
 
-    static observedAttributes = ["title", "description", "geojson", "bearing", "center", "zoom", "pitch"];
+    static observedAttributes = ["territory-id", "territory-name", "description", "geojson", "bearing", "center", "zoom", "pitch", "card-src"];
 
     geojson;
 
@@ -101,31 +121,71 @@ class TerritoryCard extends OxCustomElementBase {
                 this.mapElement.getSource("territories-source").setData(this.geojson);
             }
         });
+
+        this.customAttributes["card-src"].listen((value) => {
+            console.log("XXXXX");
+            fetch(value).then(res => res.text()).then(data => {
+
+                data = data.replace("{{name}}", "<span id='territory-name'>" + this.customAttributes["territory-name"]() + "</span>");
+                data = data.replace("{{description}}", "<span id='territory-description'>" + this.customAttributes["description"]() + "</span>");
+
+                this.shadowRoot.innerHTML = data;
+
+                let mapContainer = this.shadowRoot.getElementById("map-container");
+                this.createMap(mapContainer);
+            });
+        });
+
+        this.customAttributes["territory-name"].listen((value) => {
+            let el = this.shadowRoot.getElementById("territory-name");
+            if (el) {
+                el.innerText = value;
+            }
+        });
+
+        this.customAttributes["description"].listen((value) => {
+            let el = this.shadowRoot.getElementById("territory-description");
+            if (el) {
+                el.innerText = value;
+            }
+        });
     }
 
     connectedCallback() {
         
         this.attachShadowCss(style);
 
-        let builder = new Builder(this.shadowRoot.ownerDocument);
+        //let builder = new Builder(this.shadowRoot.ownerDocument);
 
-        this.shadowRoot.appendChild(builder.tag("link").attr("rel", "stylesheet").attr("href", "map.css").getElement());
+        // this.shadowRoot.appendChild(builder.tag("link").attr("rel", "stylesheet").attr("href", "map.css").getElement());
 
-        this.shadowRoot.appendChild(builder.tag("div").id("container").children(
-            builder.tag("div").id("header").children(
-                builder.tag("div").id("title").bindProperty("innerText", this.customAttributes.title),
-                builder.tag("div").id("description").bindProperty("innerText", this.customAttributes.description)
-            ),
-            builder.tag("div").id("map-container").children(
-                builder.tag("div").id("map")
-            ),
-            builder.tag("div").id("footer").children(
-                builder.tag("span").innerText("Prosimy")
-            )
-        ).getElement());
+        // this.shadowRoot.appendChild(builder.tag("div").id("container").children(
+        //     builder.tag("div").id("header").children(
+        //         builder.tag("div").id("title").bindProperty("innerText", this.customAttributes.title),
+        //         builder.tag("div").id("description").bindProperty("innerText", this.customAttributes.description)
+        //     ),
+        //     builder.tag("div").id("map-container"),
+        //     builder.tag("div").id("footer").children(
+        //         builder.tag("span").innerText("Prosimy")
+        //     )
+        // ).getElement());
 
+       
+
+        
+
+        // this.mapElement.addControl(new maplibregl.NavigationControl({
+        //     visualizePitch: true,
+        //     visualizeRoll: true,
+        //     showZoom: true,
+        //     showCompass: true
+        // }));
+
+    }
+
+    createMap(mapContainer) {
         this.mapElement = new maplibregl.Map({
-            container: this.shadowRoot.getElementById("map"),
+            container: mapContainer,
             style: "style.json",
             center: JSON.parse(this.customAttributes.center()) ?? [22, 50], 
             zoom: JSON.parse(this.customAttributes.zoom()) ?? 9, 
@@ -153,14 +213,8 @@ class TerritoryCard extends OxCustomElementBase {
             this.viewModified();
         });
 
-        // this.mapElement.addControl(new maplibregl.NavigationControl({
-        //     visualizePitch: true,
-        //     visualizeRoll: true,
-        //     showZoom: true,
-        //     showCompass: true
-        // }));
-
     }
+
 
     viewModified() {
         this.dispatchEvent(new CustomEvent('view-change', { }));
