@@ -11,6 +11,40 @@ function loadData(data) {
 
 }
 
+function loadTerritory(territoryData) {
+
+    const id = crypto.randomUUID();
+
+
+    let newTerritory = {
+        id: id,
+        number: territoryData.number,
+        name: territoryData.name,
+        coords: territoryData.coords,
+        geojson: {
+            "type": "Feature",
+            "geometry": {
+
+            },
+            "properties": {
+                "id": id
+            }
+        },
+        fill: territoryData.fill,
+        stroke: territoryData.stroke,
+        thickness: territoryData.thickness,
+        opacity: territoryData.opacity,
+        listElement: null,
+        view: territoryData.view
+    };
+
+    createTerritoryVisuals(newTerritory);
+
+    updateTerrritory(newTerritory);
+
+    return newTerritory;
+}
+
 function findDrafts() {
     drafts = localStorage.getItem('drafts');
 
@@ -69,7 +103,8 @@ function getJSONtoSave() {
                 fill: t.fill,
                 stroke: t.stroke,
                 thickness: t.thickness,
-                opacity: t.opacity
+                opacity: t.opacity,
+                view: t.view
             }))
         }],
     }

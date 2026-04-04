@@ -38,43 +38,7 @@ function createTerritoryVisuals(territory) {
     if (territory.listElement) {
         territory.listElement.remove();
     }
-    let listElement = document.createElement('territory-list-item');
-    territory.listElement = listElement;
-    listElement.onclick = () => {
-        selectTerritoryForEditing(territories.find(t => t.id === territory.id));
-    };
-    listElement.ondblclick = () => {
-        map.fitBounds(territory.coords[0].reduce((bounds, coord) => {
-            return bounds.extend(coord);
-        }, new maplibregl.LngLatBounds(territory.coords[0][0], territory.coords[0][0])), {
-            padding: 100
-        });
-    };
-    document.getElementById('territory-list').appendChild(listElement);
-    listElement.addEventListener('checked-change', (event) => {
-        const checked = event.detail.checked;
-        if (checked) {
-            showTerritory(territory);
-        } else {
-            hideTerritory(territory);
-        }
-
-        let showAll = document.getElementById("show-all");
-        if (showAll) {
-            showAll.isChecked = territories.every(t => t.listElement.checkbox.checked);
-            showAll.indeterminate = !showAll.isChecked && territories.some(t => t.listElement.checkbox.checked);
-        }
-    });
-    listElement.addEventListener('delete', () => {
-        if (editedTerritory && editedTerritory.id === territory.id) {
-            selectTerritoryForEditing(null);
-        }
-        let index = deleteTerritory(territory);
-        recordChangeset([{
-            index: index,
-            data: territory
-        }]);
-    });
+    createListElement(territory);
 }
 
 function toggleShowAll(show) {
@@ -86,39 +50,6 @@ function toggleShowAll(show) {
         }
         territory.listElement.checkbox.checked = show;
     });
-}
-
-function loadTerritory(territoryData) {
-
-    const id = crypto.randomUUID();
-
-
-    let newTerritory = {
-        id: id,
-        number: territoryData.number,
-        name: territoryData.name,
-        coords: territoryData.coords,
-        geojson: {
-            "type": "Feature",
-            "geometry": {
-
-            },
-            "properties": {
-                "id": id
-            }
-        },
-        fill: territoryData.fill,
-        stroke: territoryData.stroke,
-        thickness: territoryData.thickness,
-        opacity: territoryData.opacity,
-        listElement: null
-    };
-
-    createTerritoryVisuals(newTerritory);
-
-    updateTerrritory(newTerritory);
-
-    return newTerritory;
 }
 
 function updateAllTerritories() {

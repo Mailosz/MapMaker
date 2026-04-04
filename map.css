@@ -1,0 +1,157 @@
+
+.overlay,
+.maplibregl-ctrl {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(5px);
+    padding: 4px;
+    border: 1px solid #888;
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+.maplibregl-map {
+    position: relative;
+    display: grid;
+    padding: 0;
+    margin: 0;
+}
+
+.maplibregl-canvas-container {
+    overflow: clip;
+    max-height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+.maplibregl-control-container {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: auto
+}
+
+.maplibregl-ctrl-bottom-right {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+}
+
+.maplibregl-ctrl-top-right {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.maplibregl-ctrl-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.maplibregl-ctrl-zoom-in::before {
+    content: '+';
+    font-size: large;
+}
+
+.maplibregl-ctrl-zoom-out::before {
+    content: '-';
+    font-size: large;
+}
+
+.maplibregl-ctrl-compass::before {
+    content: '⥈';
+    font-size: large;
+    cursor: all-scroll;
+}
+
+.maplibregl-ctrl-geolocate::before {
+    font-size: large;
+    content: '⛯';
+}
+
+.maplibregl-user-location-dot {
+    width: 16px;
+    height: 16px;
+    background-color: maroon;
+    border: 2px solid #555;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+}
+
+.maplibregl-user-location-accuracy-circle {
+    background-color: rgba(128, 0, 0, 0.2);
+    border-radius: 50%;
+}
+
+
+
+@media print {
+
+    .overlay,
+    .maplibregl-ctrl {
+        display: none;
+    }
+
+    .edit-mode .maplibregl-marker {
+        display: none;
+    }
+}
+
+.maplibregl-marker {
+    cursor: all-scroll;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+}
+
+body:not(.edit-mode) .maplibregl-marker {
+    display: none;
+}
+
+.maplibregl-marker.point-marker {
+    padding: 8px;
+    background-color: transparent;
+    border: none;
+    border-radius: 50%;
+    z-index: 10;
+}
+
+.maplibregl-marker.point-marker::before {
+    content: ' ';
+    display: block;
+    width: 12px;
+    height: 12px;
+    background-color: cornflowerblue;
+    border: 2px solid #555;
+    border-radius: 50%;
+}
+
+.maplibregl-marker.halfpoint-marker {
+    padding: 12px;
+    background-color: transparent;
+    border: none;
+    border-radius: 50%;
+    z-index: 0;
+}
+
+.maplibregl-marker.halfpoint-marker::before {
+    content: ' ';
+    display: block;
+    width: 8px;
+    height: 8px;
+    background-color: #99bbff;
+    border: 2px solid #555;
+    border-radius: 50%;
+}
+
+.maplibregl-marker.point-marker:hover::before,
+.maplibregl-marker.halfpoint-marker:hover::before {
+    filter: brightness(1.2);
+}
+
+.maplibregl-marker.point-marker:active::before,
+.maplibregl-marker.halfpoint-marker:active::before {
+    filter: brightness(0.8);
+}

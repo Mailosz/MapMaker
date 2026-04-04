@@ -31,7 +31,7 @@ class TerritoryListItem extends HTMLElement {
         };
 
         this.cardButton = document.createElement('button');
-        this.cardButton.textContent = 'Karta';
+        this.cardButton.textContent = 'Pokaż kartę';
         this.cardButton.onclick = (event) => {
             event.stopPropagation();
             this.dispatchEvent(new CustomEvent('card', { detail: {} }));

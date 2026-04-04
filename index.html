@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mapa</title>
+    <link rel="stylesheet" href="map.css">
     <style>
         html {
             height: 100vh;
@@ -25,151 +26,9 @@
         #map-container {
             flex: 1;
             height: 100vh;
+            max-height: 100vh;
             position: relative;
             overflow: hidden;
-        }
-
-        .maplibregl-canvas-container {
-            overflow: clip;
-            height: 100vh;
-        }
-
-        .maplibregl-control-container {
-            position: fixed;
-            top: 0px;
-            left: 0px;
-            right: 0px;
-            bottom:auto
-        }
-
-        .maplibregl-ctrl-bottom-right {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-        }
-
-        .maplibregl-ctrl-top-right {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-        }
-
-        .maplibregl-ctrl-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .maplibregl-ctrl-zoom-in::before {
-            content: '+';
-            font-size: large;
-        }
-
-        .maplibregl-ctrl-zoom-out::before {
-            content: '-';
-            font-size: large;
-        }
-
-        .maplibregl-ctrl-compass::before {
-            content: '⥈';
-            font-size: large;
-            cursor: all-scroll;
-        }
-
-        .maplibregl-ctrl-geolocate::before {
-            font-size: large;
-            content: '⛯';
-        }
-
-        .maplibregl-user-location-dot {
-            width: 16px;
-            height: 16px;
-            background-color: maroon;
-            border: 2px solid #555;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
-            border-radius: 50%;
-        }
-
-        .maplibregl-user-location-accuracy-circle {
-            background-color: rgba(128, 0, 0, 0.2);
-            border-radius: 50%;
-        }
-
-        .overlay, .maplibregl-ctrl {
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(5px);
-            padding: 4px;
-            border: 1px solid #888;
-            border-radius: 4px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-        }
-
-        @media print {
-            .overlay, .maplibregl-ctrl {
-                display: none;
-            }
-
-            .edit-mode .maplibregl-marker {
-                display: none;
-            }
-        }
-
-        .maplibregl-marker {
-            cursor: all-scroll;
-            position: absolute;
-            top: 0;
-            left: 0;
-            display: block;
-        }
-
-        body:not(.edit-mode) .maplibregl-marker {
-            display: none;
-        }
-
-        .maplibregl-marker.point-marker {
-            padding: 8px;
-            background-color: transparent;
-            border: none;
-            border-radius: 50%;
-            z-index: 10;
-        }
-
-        .maplibregl-marker.point-marker::before {
-            content: ' ';
-            display: block;
-            width: 12px;
-            height: 12px;
-            background-color: cornflowerblue;
-            border: 2px solid #555;
-            border-radius: 50%;
-        }
-
-        .maplibregl-marker.halfpoint-marker {
-            padding: 12px;
-            background-color: transparent;
-            border: none;
-            border-radius: 50%;
-            z-index: 0;
-        }
-
-        .maplibregl-marker.halfpoint-marker::before {
-            content: ' ';
-            display: block;
-            width: 8px;
-            height: 8px;
-            background-color: #99bbff;
-            border: 2px solid #555;
-            border-radius: 50%;
-        }
-
-        .maplibregl-marker.point-marker:hover::before,
-        .maplibregl-marker.halfpoint-marker:hover::before {
-            filter: brightness(1.2);
-        }
-
-        .maplibregl-marker.point-marker:active::before,
-        .maplibregl-marker.halfpoint-marker:active::before {
-            filter: brightness(0.8);
         }
 
         #territory-list {
@@ -276,6 +135,32 @@
             flex-direction: column;
             align-items: stretch;
         }
+
+        .territory-dialog {
+            background: white;
+            padding: 4px;
+            width: 10cm;
+            height: 6cm;
+        }
+
+        .territory-dialog .buttons-container {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            display: flex;
+            flex-direction: row-reverse;
+            gap: 2px;
+        }
+
+        .close-button {
+            background-color: #ff3333;
+            line-height: 1.2;
+        }
+        
+        .save-button {
+            background-color: #33cc33;
+            line-height: 1.2;
+        }
     </style>
 </head>
 <body class="edit-mode">
@@ -327,21 +212,26 @@
         </div>
         <details>
             <summary style="padding-right: 0;"><div style="display: flex; justify-content: space-between; align-items: center; padding-right: 0; flex: 1;">Lista terenów: <button popovertarget="save-popover" popovertargetaction="toggle">...</button></div></summary>
-                <div id="territory-list">
-
-                </div>
-            </details>
-            <div class="controls-div">
-                <label><input id="show-all" type="checkbox" checked onchange="toggleShowAll(this.checked)">Pokazuj</label>
-                <button onclick="addNewTerritory()" title="Dodaj teren">+</button>
+            <div id="territory-list">
 
             </div>
+        </details>
+        <div class="controls-div">
+            <label><input id="show-all" type="checkbox" checked onchange="toggleShowAll(this.checked)">Pokazuj</label>
+            <button onclick="addNewTerritory()" title="Dodaj teren">+</button>
+
+        </div>
     </div>
+    <!-- <dialog class="overlay territory-dialog" open>
+        <button class="close-button" onclick="this.parentElement.close()">X</button>
+        <territory-card id="territory-card" title="Teren 122" description="Opis terenu"></territory-card>
+    </dialog> -->
     <script src='https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js'></script>
     <script src='./init.js'></script>
     <script src='./main.js'></script>
     <script src='./ui.js'></script>
     <script src='./io.js'></script>
     <script src="./territories-list.js"></script>
+    <script type="module" src="./territory-card.js"></script>
 </body>
 </html>

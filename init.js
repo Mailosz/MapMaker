@@ -21,25 +21,10 @@ let data = {
     ],
 }
 
-// let territoriesSourceGeojson = {
-//     'type': 'FeatureCollection',
-//         'features':
-//     territoryData.coords.map((coords) => {
-//         return {
-//             'type': 'Feature',
-//             'geometry': {
-//                 'type': 'Polygon',
-//                 'coordinates': [[...coords, coords[0]]]
-//             }
-//         }
-//     })
-// }
 let territoriesSource;
 let territoriesSourceGeojson = {
     'type': 'FeatureCollection',
     'features': []
-
-
 }
 
 // Initialize the map       
@@ -51,10 +36,6 @@ let map = new maplibregl.Map({
 });
 const canvas = map.getCanvasContainer();
 
-// map.addSource('territories-source', {
-//     'type': 'geojson',
-//     'data': territoriesSourceGeojson
-// });
 
 map.addControl(new maplibregl.NavigationControl({
     visualizePitch: true,
