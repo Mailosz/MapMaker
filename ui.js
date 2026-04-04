@@ -5,77 +5,72 @@ function toggleShowLayer(layerName, show) {
 
 function changeFillColor(color) {
     if (!editedTerritory) return;
-    recordChangeset([{
+    commitChangeset([{
         id: editedTerritory.id,
         data: {
-            fill: editedTerritory.fill
+            fill: color
         }
     }]);
-    editedTerritory.fill = color;
+
     refreshTerritoryGeojson(editedTerritory);
     updateTerritoriesSource();
 }
 
 function changeStrokeColor(color) {
     if (!editedTerritory) return;
-    recordChangeset([{
+    commitChangeset([{
         id: editedTerritory.id,
         data: {
-            stroke: editedTerritory.stroke
+            stroke: color
         }
     }]);
-    editedTerritory.stroke = color;
     refreshTerritoryGeojson(editedTerritory);
     updateTerritoriesSource();
 }
 
 function changeStrokeWidth(width) {
     if (!editedTerritory) return;
-    recordChangeset([{
+    commitChangeset([{
         id: editedTerritory.id,
         data: {
-            thickness: editedTerritory.thickness
+            thickness: parseFloat(width)
         }
     }]);
-    editedTerritory.thickness = parseFloat(width);
     refreshTerritoryGeojson(editedTerritory);
     updateTerritoriesSource();
 }
 
 function changeOpacity(opacity) {
     if (!editedTerritory) return;
-    recordChangeset([{
+    commitChangeset([{
         id: editedTerritory.id,
         data: {
-            opacity: editedTerritory.opacity
+            opacity: parseFloat(opacity)
         }
     }]);
-    editedTerritory.opacity = parseFloat(opacity);
     refreshTerritoryGeojson(editedTerritory);
     updateTerritoriesSource();
 }
 
 function changeName(name) {
     if (!editedTerritory) return;
-    recordChangeset([{
+    commitChangeset([{
         id: editedTerritory.id,
         data: {
-            name: editedTerritory.name
+            name: name
         }
     }]);
-    editedTerritory.name = name;
     editedTerritory.listElement.setAttribute('label', `${editedTerritory.number} - ${editedTerritory.name}`);
 }
 
 function changeNumber(number) {
     if (!editedTerritory) return;
-    recordChangeset([{
+    commitChangeset([{
         id: editedTerritory.id,
         data: {
-            number: editedTerritory.number
+            number: parseInt(number)
         }
     }]);
-    editedTerritory.number = parseInt(number);
     editedTerritory.listElement.setAttribute('label', `${editedTerritory.number} - ${editedTerritory.name}`);
 }
 
@@ -168,8 +163,8 @@ function openCardForTerritory(territory) {
 
     let card = document.createElement('territory-card');
     card.setAttribute('territoryId', territory.id);
-    card.setAttribute('title', territory.name);
-    card.setAttribute('description', `Numer: ${territory.number}`);
+    card.setAttribute('title', territory.number);
+    card.setAttribute('description', territory.name);
     card.setAttribute('geojson', JSON.stringify([territory.geojson]));
     card.setAttribute('center', JSON.stringify(getTeritoryCenter(territory)));
     card.setAttribute('zoom', JSON.stringify(getTerritoryZoom(territory)));
@@ -182,13 +177,12 @@ function openCardForTerritory(territory) {
         saveButton.classList.add('save-button');
         saveButton.textContent = '✓';
         saveButton.onclick = () => {
-            recordChangeset([{
+            commitChangeset([{
                 id: editedTerritory.id,
                 data: {
-                    view: territory.view
+                    view: card.getView()
                 }
             }]);
-            territory.view = card.getView();
             dialog.close();
         };
         buttonsContainer.appendChild(saveButton);
