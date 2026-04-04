@@ -244,6 +244,7 @@ function addNode(node, territoryData, polygonIndex) {
     territoryData.coords[polygonIndex].splice(newnode.index, 0, point);
     editedTerritoryMarkers.splice(newnode.index, 0, newnode);
 
+    documentChanged();
     refreshTerritoryGeojson(territoryData);
 }
 
@@ -279,6 +280,7 @@ function nodeDblClick(index, territoryData, polygonIndex) {
     editedTerritoryMarkers.splice(index, 1);
     territoryData.coords[polygonIndex].splice(index, 1);
 
+    documentChanged();
     refreshTerritoryGeojson(territoryData);
 
 
@@ -318,11 +320,9 @@ function nodeDragEnd(node, territoryData, polygonIndex) {
     let lastCoord = editedTerritory.coords[polygonIndex][node.index];
     const lngLat = node.marker.getLngLat();
 
-
-
     editedTerritory.coords[polygonIndex][node.index] = [lngLat.lng, lngLat.lat];
 
-    
+    documentChanged();
 }
 
 
@@ -351,6 +351,7 @@ function addNewTerritory() {
         data: null
     }]);
 
+    documentChanged();
     selectTerritoryForEditing(newTerritory);
 }
 
@@ -360,8 +361,6 @@ function addNewTerritory() {
 function recordChangeset(changeset) {
     redoStack = [];
     undoStack.push(changeset);
-
-    updateCurrentDraft();
 }
 
 function performUndo() {
@@ -428,7 +427,7 @@ function commitChangeset(changeset) {
         selectTerritoryForEditing(editedTerritory);
     }
 
-    updateCurrentDraft();
+    documentChanged();
 
     return inverseChangeset;
 }

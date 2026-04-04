@@ -110,6 +110,10 @@ function getJSONtoSave() {
     }
 }
 
+function documentChanged() {
+    updateCurrentDraft();
+}
+
 function updateCurrentDraft() {
     currentDraft.timestamp = Date.now();
     currentDraft.data = getJSONtoSave();

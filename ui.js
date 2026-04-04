@@ -80,7 +80,7 @@ function toggleEditMode(enabled) {
 
 function changeProjectName(name) {
     setProjectName(name);
-    updateCurrentDraft();
+    documentChanged();
 }
 
 function setProjectName(name) {
@@ -132,6 +132,8 @@ function createListElement(territory) {
             index: index,
             data: territory
         }]);
+
+        documentChanged();
     });
 
     listElement.addEventListener('card', () => {

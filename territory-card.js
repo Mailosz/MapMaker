@@ -123,7 +123,6 @@ class TerritoryCard extends OxCustomElementBase {
         });
 
         this.customAttributes["card-src"].listen((value) => {
-            console.log("XXXXX");
             fetch(value).then(res => res.text()).then(data => {
 
                 data = data.replace("{{name}}", "<span id='territory-name'>" + this.customAttributes["territory-name"]() + "</span>");
