@@ -264,7 +264,11 @@ function print() {
 
 
     printIframe.onload = () => {
-        printIframe.contentWindow.maplibregl = maplibregl; // Make maplibregl available in the iframe    
+        //printIframe.contentWindow.maplibregl = maplibregl; // Make maplibregl available in the iframe    
+
+        const mlScript = printIframe.contentDocument.createElement("script");
+        mlScript.src = "https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js";
+        printIframe.contentDocument.head.appendChild(mlScript);
         
         const script = printIframe.contentDocument.createElement("script");
         script.type = "module";
