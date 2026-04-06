@@ -2,9 +2,16 @@ class TerritoryListItem extends HTMLElement {
 
     static observedAttributes = ["label"];
 
+    get isChecked() {
+        return this.checkbox.isChecked;
+    }
+
+    set isChecked(value) {
+        this.checkbox.checked = value;
+    }
+
     constructor() {
         super();
-
     }
 
 

@@ -42,14 +42,14 @@ function createTerritoryVisuals(territory) {
 }
 
 function toggleShowAll(show) {
-    territories.forEach(territory => {
-        if (show) {
-            showTerritory(territory);
-        } else {
-            hideTerritory(territory);
+
+    commitChangeset(territories.map(territory => ({
+        id: territory.id,
+        data: {
+            visible: show
         }
-        territory.listElement.checkbox.checked = show;
-    });
+    })));
+
 }
 
 function updateAllTerritories() {
@@ -65,17 +65,9 @@ function updateTerrritory(territoryData) {
     territoryData.listElement.setAttribute('label', `${territoryData.number} - ${territoryData.name}`);
     territoryData.listElement.setAttribute('label', `${territoryData.number} - ${territoryData.name}`);
     territoryData.listElement.setAttribute('label', `${territoryData.number} - ${territoryData.name}`);
+    territoryData.listElement.isChecked = territoryData.visible;
 }
 
-function showTerritory(territory) {
-    map.setLayoutProperty(`${territory.id}-fill-layer`, 'visibility', 'visible');
-    map.setLayoutProperty(`${territory.id}-stroke-layer`, 'visibility', 'visible');
-}
-
-function hideTerritory(territory) {
-    map.setLayoutProperty(`${territory.id}-fill-layer`, 'visibility', 'none');
-    map.setLayoutProperty(`${territory.id}-stroke-layer`, 'visibility', 'none');
-}
 
 function removeEditingMarkers() {
     editedTerritoryMarkers.forEach(node => {
@@ -422,6 +414,7 @@ function commitChangeset(changeset) {
 
     }
 
+    // TODO: only update changd territories
     updateAllTerritories();
     if (editedTerritory) {
         selectTerritoryForEditing(editedTerritory);

@@ -12,7 +12,7 @@ body {
     margin: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-auto-rows: 10cm;
     place-items: center;
     gap: 0;
 }

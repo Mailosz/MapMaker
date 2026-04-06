@@ -11,16 +11,16 @@ function loadData(data) {
 
 }
 
-function loadTerritory(territoryData) {
+function loadTerritory(territoryJsonData) {
 
     const id = crypto.randomUUID();
 
 
     let newTerritory = {
         id: id,
-        number: territoryData.number,
-        name: territoryData.name,
-        coords: territoryData.coords,
+        number: territoryJsonData.number,
+        name: territoryJsonData.name,
+        coords: territoryJsonData.coords,
         geojson: {
             "type": "Feature",
             "geometry": {
@@ -30,12 +30,13 @@ function loadTerritory(territoryData) {
                 "id": id
             }
         },
-        fill: territoryData.fill,
-        stroke: territoryData.stroke,
-        thickness: territoryData.thickness,
-        opacity: territoryData.opacity,
+        fill: territoryJsonData.fill,
+        stroke: territoryJsonData.stroke,
+        thickness: territoryJsonData.thickness,
+        opacity: territoryJsonData.opacity,
         listElement: null,
-        view: territoryData.view
+        view: territoryJsonData.view,
+        visible: territoryJsonData.visible !== false
     };
 
     createTerritoryVisuals(newTerritory);

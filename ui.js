@@ -110,12 +110,15 @@ function createListElement(territory) {
     };
     document.getElementById('territory-list').appendChild(listElement);
     listElement.addEventListener('checked-change', (event) => {
-        const checked = event.detail.checked;
-        if (checked) {
-            showTerritory(territory);
-        } else {
-            hideTerritory(territory);
-        }
+        const isChecked = event.detail.checked;
+        
+        commitChangeset([{
+            id: territory.id,
+            data: {
+                visible: isChecked
+            }
+        }]);
+
 
         let showAll = document.getElementById("show-all");
         if (showAll) {
@@ -260,9 +263,6 @@ function print() {
     printButton.onclick = () => printIframe.contentWindow.print();
     buttonsContainer.appendChild(printButton);
 
-
-
-
     printIframe.onload = () => {
         //printIframe.contentWindow.maplibregl = maplibregl; // Make maplibregl available in the iframe    
 
@@ -280,8 +280,7 @@ function print() {
         link.href = "./print.css";
         printIframe.contentDocument.head.appendChild(link);
 
-        for (let i = 0; i < territories.length && i < 4; i++) {
-            let territory = territories[i];
+        territories.filter(t => t.visible).forEach(territory => {
             let card = printIframe.contentDocument.createElement('territory-card');
             card.setAttribute('territory-id', territory.id);
             card.setAttribute('territory-name', territory.number);
@@ -293,7 +292,7 @@ function print() {
             card.setAttribute('pitch', JSON.stringify(getTerritoryPitch(territory)));
             printIframe.contentDocument.body.appendChild(card);
             card.setAttribute('card-src', 'card.html');
-        }
+        });
     }
 
 }
