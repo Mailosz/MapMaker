@@ -246,6 +246,7 @@ function print() {
 
     let printIframe = document.createElement('iframe');
     printIframe.classList.add('print-iframe');
+    printIframe.srcdoc = "<!DOCTYPE html><html><head></head><body></body></html>";
     printDiv.appendChild(printIframe);
 
     let buttonsContainer = document.createElement('div');
@@ -280,7 +281,7 @@ function print() {
 }
 
 
-function drawPrintingPages(printIframe) {
+function drawPrintingPages(printIframe) { 
 
     const script = printIframe.contentDocument.createElement("script");
     script.type = "module";

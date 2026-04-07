@@ -27,6 +27,10 @@ body {
     gap: 1px;
 }
 
+.grid:empty::before {
+    content: "Nothing to draw";
+}
+
 
 territory-card {
     box-sizing: content-box;
