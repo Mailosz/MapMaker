@@ -262,6 +262,7 @@ function print() {
     let printButton = document.createElement('button');
     printButton.classList.add('save-button');
     printButton.textContent = 'Drukuj';
+    printButton.disabled = true;
     printButton.onclick = () => printIframe.contentWindow.print();
     buttonsContainer.appendChild(printButton);
 
@@ -273,7 +274,11 @@ function print() {
 
         const mlScript = printIframe.contentDocument.createElement("script");
         mlScript.src = "https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js";
-        mlScript.onload = () => { drawPrintingPages(printIframe); };
+        mlScript.onload = () => { 
+            drawPrintingPages(printIframe).then(() => {
+                printButton.disabled = false;
+            });
+        };
         printIframe.contentDocument.head.appendChild(mlScript);
         
     }
@@ -302,7 +307,9 @@ function drawPrintingPages(printIframe) {
     page.appendChild(grid);
 
     let count = 0;
+    let futures = [];
     for (let territory of territories.filter(t => t.visible)) {
+        
         let card = printIframe.contentDocument.createElement('territory-card');
         card.setAttribute('territory-id', territory.id);
         card.setAttribute('territory-name', territory.number);
@@ -313,6 +320,12 @@ function drawPrintingPages(printIframe) {
         card.setAttribute('zoom', JSON.stringify(getTerritoryZoom(territory)));
         card.setAttribute('bearing', JSON.stringify(getTerritoryBearing(territory)));
         card.setAttribute('pitch', JSON.stringify(getTerritoryPitch(territory)));
+        let promise = new Promise((resolve) => {
+            card.addEventListener('loaded', () => {
+                resolve();
+            });
+        });
+        futures.push(promise);
         grid.appendChild(card);
         card.setAttribute('card-src', 'card.html');
 
@@ -325,6 +338,7 @@ function drawPrintingPages(printIframe) {
             grid = printIframe.contentDocument.createElement('div');
             grid.classList.add('grid');
             page.appendChild(grid);
-        }
+        }   
     }
+    return Promise.all(futures);
 }

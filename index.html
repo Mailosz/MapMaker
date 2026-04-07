@@ -62,11 +62,15 @@
             background-color: #f0f3f5; 
         }
 
-        button:hover {
+        button:disabled {
+            filter: grayscale();
+        }
+
+        button:enabled:hover {
             filter: brightness(1.1);
         }
 
-        button:active {
+        button:enabled:active {
             filter: brightness(0.9);
         }
 

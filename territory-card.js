@@ -124,9 +124,9 @@ class TerritoryCard extends OxCustomElementBase {
 
         this.mapElement.on('load', () => {
             if (this.geojson) {
-
                 this.mapElement.getSource("territories-source").setData(this.geojson);
             }
+            this.dispatchEvent(new CustomEvent('loaded', { }));
         });
 
         this.mapElement.on("movestart", () => {
