@@ -27,7 +27,7 @@ class TerritoryListItem extends HTMLElement {
 
 
         this.label = document.createElement('span');
-        this.label.style.flex = '1';
+        this.label.classList.add('label');
         this.appendChild(this.label);
 
         this.deleteButton = document.createElement('button');
