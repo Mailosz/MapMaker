@@ -170,6 +170,7 @@ function openCardForTerritory(territory) {
     card.setAttribute('territory-id', territory.id);
     card.setAttribute('territory-name', territory.number);
     card.setAttribute('description', territory.name);
+    card.setAttribute('editable', 'true');
     card.setAttribute('geojson', JSON.stringify([territory.geojson]));
     card.setAttribute('center', JSON.stringify(getTeritoryCenter(territory)));
     card.setAttribute('zoom', JSON.stringify(getTerritoryZoom(territory)));
@@ -264,35 +265,65 @@ function print() {
     buttonsContainer.appendChild(printButton);
 
     printIframe.onload = () => {
+        //better quality for printing
+        printIframe.contentWindow.devicePixelRatio = 3;
+
         //printIframe.contentWindow.maplibregl = maplibregl; // Make maplibregl available in the iframe    
 
         const mlScript = printIframe.contentDocument.createElement("script");
         mlScript.src = "https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js";
+        mlScript.onload = () => { drawPrintingPages(printIframe); };
         printIframe.contentDocument.head.appendChild(mlScript);
         
-        const script = printIframe.contentDocument.createElement("script");
-        script.type = "module";
-        script.src = "./territory-card.js";
-        printIframe.contentDocument.head.appendChild(script);
-
-        const link = printIframe.contentDocument.createElement("link");
-        link.rel = "stylesheet";
-        link.href = "./print.css";
-        printIframe.contentDocument.head.appendChild(link);
-
-        territories.filter(t => t.visible).forEach(territory => {
-            let card = printIframe.contentDocument.createElement('territory-card');
-            card.setAttribute('territory-id', territory.id);
-            card.setAttribute('territory-name', territory.number);
-            card.setAttribute('description', territory.name);
-            card.setAttribute('geojson', JSON.stringify([territory.geojson]));
-            card.setAttribute('center', JSON.stringify(getTeritoryCenter(territory)));
-            card.setAttribute('zoom', JSON.stringify(getTerritoryZoom(territory)));
-            card.setAttribute('bearing', JSON.stringify(getTerritoryBearing(territory)));
-            card.setAttribute('pitch', JSON.stringify(getTerritoryPitch(territory)));
-            printIframe.contentDocument.body.appendChild(card);
-            card.setAttribute('card-src', 'card.html');
-        });
     }
 
+}
+
+
+function drawPrintingPages(printIframe) {
+
+    const script = printIframe.contentDocument.createElement("script");
+    script.type = "module";
+    script.src = "./territory-card.js";
+    printIframe.contentDocument.head.appendChild(script);
+
+    const link = printIframe.contentDocument.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "./print.css";
+    printIframe.contentDocument.head.appendChild(link);
+
+    let page = printIframe.contentDocument.createElement('div');
+    page.classList.add('page');
+    printIframe.contentDocument.body.appendChild(page);
+
+    let grid = printIframe.contentDocument.createElement('div');
+    grid.classList.add('grid');
+    page.appendChild(grid);
+
+    let count = 0;
+    for (let territory of territories.filter(t => t.visible)) {
+        let card = printIframe.contentDocument.createElement('territory-card');
+        card.setAttribute('territory-id', territory.id);
+        card.setAttribute('territory-name', territory.number);
+        card.setAttribute('description', territory.name);
+        card.setAttribute('editable', 'false');
+        card.setAttribute('geojson', JSON.stringify([territory.geojson]));
+        card.setAttribute('center', JSON.stringify(getTeritoryCenter(territory)));
+        card.setAttribute('zoom', JSON.stringify(getTerritoryZoom(territory)));
+        card.setAttribute('bearing', JSON.stringify(getTerritoryBearing(territory)));
+        card.setAttribute('pitch', JSON.stringify(getTerritoryPitch(territory)));
+        grid.appendChild(card);
+        card.setAttribute('card-src', 'card.html');
+
+        if (++count >= 4) {
+            count = 0;
+            page = printIframe.contentDocument.createElement('div');
+            page.classList.add('page');
+            printIframe.contentDocument.body.appendChild(page);
+
+            grid = printIframe.contentDocument.createElement('div');
+            grid.classList.add('grid');
+            page.appendChild(grid);
+        }
+    }
 }

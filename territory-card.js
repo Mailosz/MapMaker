@@ -53,60 +53,14 @@ class OxCustomElementBase extends HTMLElement {
 
 }
 
-let style = /*css*/`
-    :host {
-        display: block;
-        width: 14cm;
-        height: 9.7cm;
-    }
-
-    #container {
-        display: block;
-        width: 14cm;
-        height: 9.7cm;
-    }
-
-    #header {
-        position: absolute;
-        left: 0.1cm;
-        top: 0.1cm;
-        right: 0.1cm;
-        height: 2cm;
-    }
-
-    #map-container {
-        position: absolute;
-        left: 0.1cm;
-        top: 2.5cm; 
-        right: 0.1cm;
-        bottom: 1cm;
-    }
-
-    #map {
-        height: 8cm;
-        width: 14cm;
-    }
-
-
-    .maplibregl-ctrl-attrib {
-        display: none;
-    }
-
-    #footer {
-        position: absolute;
-        left: 0.1cm;
-        right: 0.1cm;
-        bottom: 0.1cm;
-        height: 0.8cm;
-        font-size: 10px;
-    }
-    `;
     
 class TerritoryCard extends OxCustomElementBase {
 
-    static observedAttributes = ["territory-id", "territory-name", "description", "geojson", "bearing", "center", "zoom", "pitch", "card-src"];
+    static observedAttributes = ["territory-id", "territory-name", "description", "geojson", "bearing", "center", "zoom", "pitch", "editable", "card-src"];
 
     geojson;
+    isEditable = null;
+    #cardLoad;
 
     constructor() {
         super();
@@ -148,38 +102,13 @@ class TerritoryCard extends OxCustomElementBase {
                 el.innerText = value;
             }
         });
+
+        this.customAttributes.editable.listen((value) => {
+            this.isEditable = value === "true";
+        });
     }
 
     connectedCallback() {
-        
-        this.attachShadowCss(style);
-
-        //let builder = new Builder(this.shadowRoot.ownerDocument);
-
-        // this.shadowRoot.appendChild(builder.tag("link").attr("rel", "stylesheet").attr("href", "map.css").getElement());
-
-        // this.shadowRoot.appendChild(builder.tag("div").id("container").children(
-        //     builder.tag("div").id("header").children(
-        //         builder.tag("div").id("title").bindProperty("innerText", this.customAttributes.title),
-        //         builder.tag("div").id("description").bindProperty("innerText", this.customAttributes.description)
-        //     ),
-        //     builder.tag("div").id("map-container"),
-        //     builder.tag("div").id("footer").children(
-        //         builder.tag("span").innerText("Prosimy")
-        //     )
-        // ).getElement());
-
-       
-
-        
-
-        // this.mapElement.addControl(new maplibregl.NavigationControl({
-        //     visualizePitch: true,
-        //     visualizeRoll: true,
-        //     showZoom: true,
-        //     showCompass: true
-        // }));
-
     }
 
     createMap(mapContainer) {
@@ -189,7 +118,8 @@ class TerritoryCard extends OxCustomElementBase {
             center: JSON.parse(this.customAttributes.center()) ?? [22, 50], 
             zoom: JSON.parse(this.customAttributes.zoom()) ?? 9, 
             bearing: JSON.parse(this.customAttributes.bearing()) ?? 0,
-            pitch: JSON.parse(this.customAttributes.pitch()) ?? 0
+            pitch: JSON.parse(this.customAttributes.pitch()) ?? 0,
+            interactive: this.isEditable === true
         });
 
         this.mapElement.on('load', () => {

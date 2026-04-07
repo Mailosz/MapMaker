@@ -1,23 +1,54 @@
 html {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 body {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.page {
+    justify-self: center;
+    align-self: center;
     width: 297mm;
-    height: 210mm;
-    margin: 0;
+    height: 200mm;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    break-after: page;
+}
+
+.grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-auto-rows: 10cm;
+    grid-template-columns: 14cm 14cm;
+    grid-template-rows: 9.7cm 9.7cm;
     place-items: center;
-    gap: 0;
+    gap: 1px;
+}
+
+
+territory-card {
+    box-sizing: content-box;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+}
+
+territory-card:nth-child(4n+2) {
+    border-left: none;
+}
+
+territory-card:nth-child(4n+3) {
+    border-top: none;
+}
+
+territory-card:nth-child(4n+4) {
+    border-top: none;
+    border-left: none;
 }
 
 @media print {
+
     @page {
         size: landscape;
         margin: 0.5cm 1cm;
