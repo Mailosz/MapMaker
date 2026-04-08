@@ -68,8 +68,6 @@ map.on('load', () => {
         selectTerritoryForEditing(territories[0]);
     }
 
-    findDrafts();
-
 });
 
 

@@ -56,7 +56,7 @@ class OxCustomElementBase extends HTMLElement {
     
 class TerritoryCard extends OxCustomElementBase {
 
-    static observedAttributes = ["territory-id", "territory-name", "description", "geojson", "bearing", "center", "zoom", "pitch", "editable", "card-src"];
+    static observedAttributes = ["territory-id", "territory-name", "description", "geojson", "bearing", "center", "zoom", "pitch", "editable", "card-src", "static-image"];
 
     geojson;
     isEditable = null;
@@ -84,8 +84,12 @@ class TerritoryCard extends OxCustomElementBase {
 
                 this.shadowRoot.innerHTML = data;
 
-                let mapContainer = this.shadowRoot.getElementById("map-container");
-                this.createMap(mapContainer);
+                if (this.customAttributes.geojson()) {
+                    let mapContainer = this.shadowRoot.getElementById("map-container");
+                    this.createMap(mapContainer);
+                } else if (this.customAttributes["static-image"]()) {
+                    this.setStaticImage(this.customAttributes["static-image"]());
+                }
             });
         });
 
@@ -103,12 +107,24 @@ class TerritoryCard extends OxCustomElementBase {
             }
         });
 
+        this.customAttributes["static-image"].listen((value) => {
+            this.setStaticImage(value);
+        });
+
         this.customAttributes.editable.listen((value) => {
             this.isEditable = value === "true";
         });
     }
 
     connectedCallback() {
+    }
+
+    setStaticImage(imageData) {
+        let mapContainer = this.shadowRoot.getElementById("map-container");
+
+        if (mapContainer) {
+            mapContainer.innerHTML = `<img src="${imageData}">`;
+        }
     }
 
     createMap(mapContainer) {

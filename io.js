@@ -154,7 +154,13 @@ function load() {
     input.click();
 }
 
-function changeProject(data) {
+async function changeProject(data) {
+    if (!map.loaded()) {
+        await new Promise(resolve => {
+            map.on('load', () => resolve());
+        });
+    }
+
     removeEditingMarkers();
     for (let territory of territories) {
         deleteTerritoryVisuals(territory);

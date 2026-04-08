@@ -201,7 +201,7 @@
         }
     </style>
 </head>
-<body class="edit-mode">
+<body class="edit-mode" onload="findDrafts();">
     <div id="map-container"></div>
     <div class="overlay" style="position: fixed; top: 10px; left: 10px;">
         <label><input type="checkbox" id="edit-mode-toggle" onchange="toggleEditMode(this.checked)" checked> Tryb edycji</label>
@@ -273,5 +273,6 @@
     <script src='./io.js'></script>
     <script src="./territories-list.js"></script>
     <script type="module" src="./territory-card.js"></script>
+    <script src='./print.js'></script>
 </body>
 </html>
