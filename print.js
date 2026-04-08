@@ -71,7 +71,7 @@ async function drawPrintingPages(printIframe,) {
         card.setAttribute('territory-name', territory.number);
         card.setAttribute('description', territory.name);
         card.setAttribute('editable', 'false');
-        card.setAttribute('static-image', await renderTerritoryToImage(renderer.renderMap, territory)); 
+        card.setAttribute('static-image', URL.createObjectURL(await renderTerritoryToImage(renderer.renderMap, territory))); 
 
         grid.appendChild(card);
         card.setAttribute('card-src', 'card.html');
@@ -144,5 +144,9 @@ async function renderTerritoryToImage(renderMap, territory) {
     await new Promise(resolve => renderMap.once("idle", resolve));
 
     // Export image
-    return renderMap.getCanvas().toDataURL("image/png");
+    return new Promise((resolve) => {
+        renderMap.getCanvas().toBlob((blob) => {
+            resolve(blob);
+        });
+    });
 }
