@@ -114,6 +114,9 @@ function getJSONtoSave() {
     }
 }
 
+/**
+ * To call after every change in the document - updates the current draft
+ */
 function documentChanged() {
     updateCurrentDraft();
 }

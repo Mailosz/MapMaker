@@ -387,28 +387,40 @@ function changeTerritoryOrder(territory, beforeTerritory) {
             id: territory.id,
             data: null
     }]);
+
+    documentChanged();
+
+    selectTerritoryForEditing(territory);
 }
 
 /**
- * Records a changeset for undo/redo and saves current project as draft
+ * Records a changeset for undo/redo without saving the draft
  */
 function recordChangeset(changeset) {
     redoStack = [];
     undoStack.push(changeset.reverse()); // changes should be in natural order, but we store them reversed for easier undoing
 }
 
+/**
+ * Performs undo and saves the document
+ */
 function performUndo() {
     if (undoStack.length === 0) return;
     const changeset = undoStack.pop();
     // console.log("UNDO", changeset);
     redoStack.push(commitChangeset(changeset));
+    documentChanged();
 }
 
+/**
+ * Performs redo and saves the document
+ */
 function performRedo() {
     if (redoStack.length === 0) return;
     const changeset = redoStack.pop();
     // console.log("REDO", changeset);
     undoStack.push(commitChangeset(changeset));
+    documentChanged();
 }
 
 function commitChangeset(changeset) {
