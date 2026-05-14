@@ -95,8 +95,13 @@ function closePopover(el) {
     popover.hidePopover();
 }
 
+
+let dragIndicator = null;
+let draggedListItem = null;
+
 function createListElement(territory) {
     let listElement = document.createElement('territory-list-item');
+    listElement.territory = territory;
     territory.listElement = listElement;
     listElement.onclick = () => {
         selectTerritoryForEditing(territories.find(t => t.id === territory.id));
@@ -108,7 +113,7 @@ function createListElement(territory) {
             padding: 100
         });
     };
-    document.getElementById('territory-list').appendChild(listElement);
+    
     listElement.addEventListener('checked-change', (event) => {
         const isChecked = event.detail.checked;
         
@@ -118,8 +123,7 @@ function createListElement(territory) {
                 visible: isChecked
             }
         }]);
-
-
+        
         let showAll = document.getElementById("show-all");
         if (showAll) {
             showAll.isChecked = territories.every(t => t.listElement.checkbox.checked);
@@ -135,13 +139,69 @@ function createListElement(territory) {
             index: index,
             data: territory
         }]);
-
+        
         documentChanged();
     });
+    
 
     listElement.addEventListener('card', () => {
         openCardForTerritory(territory);
     });
+    
+    listElement.draggable = true;
+    const removeDragIndicator = (event) => {
+        if (dragIndicator) {
+            dragIndicator.remove();
+            dragIndicator = null;
+        }
+    }
+    const createDragIndicator = (event) => {
+        dragIndicator = document.createElement('div');
+        dragIndicator.addEventListener('dragover', (event) => { event.preventDefault(); });
+        dragIndicator.classList.add('drag-indicator');
+    }
+    listElement.addEventListener('dragstart', () => {
+        removeDragIndicator();
+        selectTerritoryForEditing(territories.find(t => t.id === territory.id));
+        createDragIndicator();
+        draggedListItem = listElement;
+    });
+
+    listElement.addEventListener('dragover', (event) => {
+        if (!draggedListItem) return;
+        event.preventDefault();
+        const rect = event.currentTarget.getBoundingClientRect();
+        const y = event.clientY - rect.top;
+        if (!dragIndicator) {
+            createDragIndicator();
+        }
+        if (y < rect.height / 2) {
+            listElement.parentElement.insertBefore(dragIndicator, listElement);
+        } else {
+            listElement.parentElement.insertBefore(dragIndicator, listElement.nextSibling);
+        }
+    });
+
+    listElement.addEventListener('dragend', ()=> {
+        removeDragIndicator();
+        draggedListItem = null;
+    });
+}
+
+let list = document.getElementById('territory-list');
+list.addEventListener('dragover', (event) => {
+    if (!draggedListItem) return;
+    event.preventDefault();
+});
+list.addEventListener('drop', (event) => {
+    event.preventDefault();
+    if (!draggedListItem || !dragIndicator) return;
+    if (dragIndicator.parentElement !== list) return;
+    changeTerritoryOrder(draggedListItem.territory, dragIndicator.nextSibling?.territory);
+});
+
+function changeTerritoryOrder(territory, beforeTerritory) {
+    dragIndicator.parentElement.insertBefore(territory.listElement, beforeTerritory?.listElement);
 }
 
 function openCardForTerritory(territory) {

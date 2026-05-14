@@ -1,0 +1,26 @@
+button {
+    cursor: pointer;
+    padding: 0.5em 1em;
+    border: none;
+    background-color: rgba(240, 243, 245, 0.5); /* #f0f3f5 */
+}
+
+button:disabled {
+    filter: grayscale();
+}
+
+button:enabled:hover {
+    filter: brightness(1.1);
+}
+
+button:enabled:active {
+    filter: brightness(0.9);
+}
+
+[popover] {
+    inset: auto;
+    margin: 0;
+    border: 1px solid #888;
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}

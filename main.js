@@ -326,9 +326,11 @@ function addNewTerritory() {
     let projected = map.project(center);
     let size = map.unproject([projected.x + 50, projected.y + 50]).lng - map.unproject(projected).lng;
 
+    let number = getNewTerritoryNumber();
+
     const newTerritoryData = {
-        number: territories.length + 1,
-        name: `Teren ${territories.length + 1}`,
+        number: number,
+        name: `Teren ${number}`,
         coords: [[[center.lng - size, center.lat], [center.lng + size, center.lat], [center.lng, center.lat + size]]],
         fill: document.getElementById("fill-input")?.value ?? "#000088",
         stroke: document.getElementById("stroke-input")?.value ?? "#000000",
@@ -336,6 +338,7 @@ function addNewTerritory() {
         opacity: parseFloat(document.getElementById("opacity-input")?.value ?? 0.2)
     };
     let newTerritory = loadTerritory(newTerritoryData);
+    document.getElementById('territory-list').appendChild(newTerritory.listElement);
     territories.push(newTerritory);
 
     recordChangeset([{
@@ -345,6 +348,16 @@ function addNewTerritory() {
 
     documentChanged();
     selectTerritoryForEditing(newTerritory);
+}
+
+function getNewTerritoryNumber() {
+    let number = territories.length + 1;
+
+    while (territories.find(t => t.number === number)) {
+        number++;
+    }
+
+    return number;
 }
 
 /**

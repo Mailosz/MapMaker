@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mapa</title>
+    <link rel="stylesheet" href="base.css">
     <link rel="stylesheet" href="map.css">
     <style>
         html {
@@ -35,6 +36,8 @@
             max-height: 50vh;
             overflow-y: auto;
             margin: 4px;
+            max-width: 300px;
+            position: relative;
         }
 
         territory-list-item {
@@ -55,23 +58,12 @@
             background-color: cornflowerblue;
         }
 
-        button {
-            cursor: pointer;
-            padding: 0.5em 1em;
-            border: none;
-            background-color: #f0f3f5; 
-        }
-
-        button:disabled {
-            filter: grayscale();
-        }
-
-        button:enabled:hover {
-            filter: brightness(1.1);
-        }
-
-        button:enabled:active {
-            filter: brightness(0.9);
+        .drag-indicator {
+            border-top: 2px solid black;
+            border-bottom: 2px solid white;
+            position: absolute;
+            left: 0;
+            right: 0;
         }
 
         summary {
@@ -117,14 +109,6 @@
             font-size: large;
         }
 
-        [popover] {
-            inset: auto;
-            margin: 0;
-            border: 1px solid #888;
-            border-radius: 4px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
         #save-popover {
             position-area: top;
         }
@@ -137,17 +121,9 @@
             text-align: center;
         }
 
-        .more-menu:popover-open {
-            position-area: right span-all;
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-        }
-
         .territory-dialog {
             background: white;
             padding: 4px;
-
         }
 
         .buttons-container {
@@ -191,13 +167,6 @@
 
         .print-div .buttons-container {
             z-index: 10000;
-        }
-
-        territory-list-item .label {
-            flex: 1;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            overflow: hidden;
         }
     </style>
 </head>
@@ -271,7 +240,7 @@
     <script src='./main.js'></script>
     <script src='./ui.js'></script>
     <script src='./io.js'></script>
-    <script src="./territories-list.js"></script>
+    <script type="module" src="./territory-list-item.js"></script>
     <script type="module" src="./territory-card.js"></script>
     <script src='./print.js'></script>
 </body>

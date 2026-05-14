@@ -2,9 +2,12 @@ function loadData(data) {
 
     setProjectName(data.name);
 
+   const list = document.getElementById('territory-list');
+
     data.groups.forEach(group => {
         group.territories.forEach(territory => {
             const newTerritory = loadTerritory(territory);
+            list.appendChild(newTerritory.listElement);
             territories.push(newTerritory);
         });
     });
