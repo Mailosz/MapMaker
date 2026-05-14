@@ -200,9 +200,11 @@ list.addEventListener('drop', (event) => {
     changeTerritoryOrder(draggedListItem.territory, dragIndicator.nextSibling?.territory);
 });
 
-function changeTerritoryOrder(territory, beforeTerritory) {
-    dragIndicator.parentElement.insertBefore(territory.listElement, beforeTerritory?.listElement);
+function moveListElementToIndex(territoryListElement, index) {
+    const beforeElement = index >= list.children.length ? null : list.children[index];
+    list.insertBefore(territoryListElement, beforeElement);
 }
+
 
 function openCardForTerritory(territory) {
     let dialog = document.createElement('dialog');

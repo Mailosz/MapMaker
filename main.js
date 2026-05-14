@@ -30,6 +30,10 @@ function deleteTerritory(territory) {
     return index;
 }
 
+/**
+ * Creates the visuals (list element, and geojson source entry) for the territory and adds them to the map and list
+ * @param {*} territory 
+ */
 function createTerritoryVisuals(territory) {
 
     //insert geojson into source
@@ -361,11 +365,36 @@ function getNewTerritoryNumber() {
 }
 
 /**
+ * Moves the territory to a position in the list
+ * @param {*} territory 
+ * @param {*} beforeTerritory 
+ */
+function changeTerritoryOrder(territory, beforeTerritory) {
+
+    let deleteIndex = deleteTerritory(territory);
+    let insertIndex = beforeTerritory ? territories.findIndex(t => t.id === beforeTerritory.id) : territories.length;
+    territories.splice(insertIndex, 0, territory); //insert
+    
+    // do not createTerritoryVisuals because it is suited for newly created territory, only move them
+    territoriesSourceGeojson.features.splice(beforeTerritory ? territoriesSourceGeojson.features.findIndex(feature => feature.properties.id === beforeTerritory.id) : territoriesSourceGeojson.features.length, 0, territory.geojson);
+    moveListElementToIndex(territory.listElement, insertIndex);
+
+
+    recordChangeset([{
+            index: deleteIndex,
+            data: territory
+        },{
+            id: territory.id,
+            data: null
+    }]);
+}
+
+/**
  * Records a changeset for undo/redo and saves current project as draft
  */
 function recordChangeset(changeset) {
     redoStack = [];
-    undoStack.push(changeset);
+    undoStack.push(changeset.reverse()); // changes should be in natural order, but we store them reversed for easier undoing
 }
 
 function performUndo() {
@@ -393,10 +422,10 @@ function commitChangeset(changeset) {
 
                 let index = deleteTerritory(createdTerritory);
 
-                inverseChangeset.push({
+                inverseChangeset.unshift({
                     index: index,
                     data: createdTerritory
-                });
+                }); 
             } else { // changed territory
                 let territory = territories.find(t => t.id === change.id);
                 if (!territory) throw new Error("Territory not found for change commit");
@@ -407,7 +436,7 @@ function commitChangeset(changeset) {
                     territory[key] = change.data[key];
                 }
 
-                inverseChangeset.push({
+                inverseChangeset.unshift({
                     id: territory.id,
                     data: previousData
                 });
@@ -416,9 +445,10 @@ function commitChangeset(changeset) {
             let deletedTerritory = change.data;
             territories.splice(change.index, 0, deletedTerritory);
             createTerritoryVisuals(deletedTerritory);
-            //TODO: move listElement to correct position in list
+            
+            moveListElementToIndex(deletedTerritory.listElement, change.index);
 
-            inverseChangeset.push({
+            inverseChangeset.unshift({
                 id: deletedTerritory.id,
                 data: null
             });

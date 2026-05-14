@@ -35,7 +35,7 @@
         #territory-list {
             max-height: 50vh;
             overflow-y: auto;
-            margin: 4px;
+            margin: 4px 0;
             max-width: 300px;
             position: relative;
         }
@@ -221,7 +221,11 @@
             </div>
         </div>
         <details>
-            <summary style="padding-right: 0;"><div style="display: flex; justify-content: space-between; align-items: center; padding-right: 0; flex: 1;">Lista terenów: <button popovertarget="save-popover" popovertargetaction="toggle">...</button></div></summary>
+            <summary style="padding-right: 0;"><div style="display: flex; justify-content: space-between; align-items: center; padding-right: 0; flex: 1;">
+                Lista terenów&nbsp;
+                <button><div style="rotate: -45deg; ">&#9906;</div></button>
+                <button popovertarget="save-popover" popovertargetaction="toggle">...</button>
+            </summary>
             <div id="territory-list">
 
             </div>
