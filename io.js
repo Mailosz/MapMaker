@@ -21,8 +21,8 @@ function loadTerritory(territoryJsonData) {
 
     let newTerritory = {
         id: id,
-        number: territoryJsonData.number,
-        name: territoryJsonData.name,
+        number: territoryJsonData.name,
+        name: territoryJsonData.desc,
         coords: territoryJsonData.coords,
         geojson: {
             "type": "Feature",
@@ -101,8 +101,8 @@ function getJSONtoSave() {
         name: currentProjectName,
         groups: [{
             territories: territories.map(t => ({
-                number: t.number,
-                name: t.name,
+                name: t.number,
+                desc: t.name,
                 coords: t.coords,
                 fill: t.fill,
                 stroke: t.stroke,

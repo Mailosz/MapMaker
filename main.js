@@ -329,8 +329,8 @@ function addNewTerritory() {
     let number = getNewTerritoryNumber();
 
     const newTerritoryData = {
-        number: number,
-        name: `Teren ${number}`,
+        name: number,
+        desc: `Teren ${number}`,
         coords: [[[center.lng - size, center.lat], [center.lng + size, center.lat], [center.lng, center.lat + size]]],
         fill: document.getElementById("fill-input")?.value ?? "#000088",
         stroke: document.getElementById("stroke-input")?.value ?? "#000000",

@@ -86,6 +86,7 @@
         #draft-list {
             display: flex; 
             flex-direction: column;
+            gap: 4px;
             max-height: 400px; 
             overflow-y: auto;
         }
@@ -180,8 +181,8 @@
         <details>
             <summary>Dane terenu:</summary>
             <form id="territory-form" style="padding: 8px;">
-                <p><label>Numer: <input id="number-input" type="number" onchange="changeNumber(this.value)"></label></p>
-                <p><label>Nazwa: <input id="name-input" type="text" onchange="changeName(this.value)"></label></p>
+                <p><label>Nazwa: <input id="number-input" type="number" onchange="changeNumber(this.value)"></label></p>
+                <p><label>Opis: <input id="name-input" type="text" onchange="changeName(this.value)"></label></p>
                 <p><label>Wypełnienie: <input id="fill-input" type="color" onchange="changeFillColor(this.value)"></label></p>
                 <p><label>Obramowanie: <input id="stroke-input" type="color" onchange="changeStrokeColor(this.value)"></label></p>
                 <p><label>Grubość kreski: <input id="thickness-input" type="range" min="1" step="0.1" max="10" onchange="changeStrokeWidth(this.value)"></label></p>
@@ -191,7 +192,7 @@
     </div>
     <div popover="auto" class="overlay" id="draft-popover">
         <p>Znaleziono wersję roboczą. Wybierz aby kontynuować pracę:</p>
-        <p>Uwaga: poniższe projekty mogą zostać usunięte w każdej chwili. Zapisz je aby nie stracić swojej pracy.</p>
+        <p style="font-size: smaller; font-weight: bold;">Uwaga: poniższe projekty mogą zostać usunięte w każdej chwili. Zapisz je aby nie stracić swojej pracy.</p>
         <div id="draft-list"></div>
     </div>
     <div class="overlay" style="position: fixed; left: 10px; bottom: 10px; max-width: 35%;">
