@@ -361,7 +361,7 @@ function getNewTerritoryNumber() {
         number++;
     }
 
-    return number;
+    return number.toString();
 }
 
 /**

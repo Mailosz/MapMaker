@@ -110,7 +110,7 @@
             font-size: large;
         }
 
-        #save-popover {
+        #save-popover, #search-popover {
             position-area: top;
         }
 
@@ -169,6 +169,14 @@
         .print-div .buttons-container {
             z-index: 10000;
         }
+
+        #territory-list-header {
+            display: flex; 
+            align-items: center; 
+            padding-right: 0; 
+            flex: 1;
+            gap: 4px;
+        }
     </style>
 </head>
 <body class="edit-mode" onload="findDrafts();">
@@ -220,11 +228,16 @@
                 </details>
             </div>
         </div>
-        <details>
-            <summary style="padding-right: 0;"><div style="display: flex; justify-content: space-between; align-items: center; padding-right: 0; flex: 1;">
-                Lista terenów&nbsp;
-                <button><div style="rotate: -45deg; ">&#9906;</div></button>
-                <button popovertarget="save-popover" popovertargetaction="toggle">...</button>
+        <details id="territory-list-details">
+            <summary style="padding-right: 0;">
+                <div id="territory-list-header">
+                    <div style="flex: 1;">Lista terenów&nbsp;</div>
+                    <button popovertarget="search-popover" popovertargetaction="toggle"><div style="rotate: -45deg; ">&#9906;</div></button>
+                    <div popover="manual" id="search-popover" class="overlay" style="padding: 8px;" ontoggle="searchPopoverToggle(event)">
+                        <input id="search-input" type="text" placeholder="Szukaj..." autofocus oninput="searchTerritoryList(this.value)" style="flex: 1; width: auto;">
+                    </div>
+                    <button popovertarget="save-popover" popovertargetaction="toggle">...</button>
+                </div>
             </summary>
             <div id="territory-list">
 

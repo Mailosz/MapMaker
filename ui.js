@@ -298,3 +298,36 @@ function getTerritoryPitch(territory) {
     }
     return 0;
 }
+
+/**
+ * 
+ * @param {string} text 
+ */
+function searchTerritoryList(text) {
+
+    text = text.trim().toLowerCase();
+
+    for (let territory of territories) {
+
+        if (!text) {
+            territory.listElement.style.visibility = 'visible';
+        } else {
+            if (territory.number.toLowerCase().indexOf(text) !== -1 || territory.name.toLowerCase().indexOf(text) !== -1) {
+                territory.listElement.style.visibility = 'visible';
+            } else {
+                territory.listElement.style.visibility = 'collapse';
+            }
+        }
+
+    }
+
+}
+
+function searchPopoverToggle(event) {
+    if (event.newState === "open") {
+        searchTerritoryList(document.querySelector('#search-input').value);
+        document.getElementById("territory-list-details").open = true;
+    } else {
+        searchTerritoryList("");
+    }
+}
