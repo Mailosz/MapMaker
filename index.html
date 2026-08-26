@@ -253,8 +253,12 @@
         <button class="close-button" onclick="this.parentElement.close()">X</button>
         <territory-card id="territory-card" title="Teren 122" description="Opis terenu"></territory-card>
     </dialog> -->
-    <script src='https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js'></script>
-    <script src='./init.js'></script>
+    <script type="module">
+        import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.6.0/dist/maplibre-gl.mjs';
+        window.maplibregl = maplibregl;
+
+    </script>
+    <script defer src='./init.js'></script>
     <script src='./main.js'></script>
     <script src='./ui.js'></script>
     <script src='./io.js'></script>
